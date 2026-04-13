@@ -56,6 +56,35 @@
 .nav-links a.active.sport  { color: var(--accent-sport); }
 .nav-links a.active.travel { color: var(--accent-travel); }
 
+/* Nav user */
+.nav-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.nav-username {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.nav-logout {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 10px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-logout:hover {
+  color: var(--text);
+  border-color: #555;
+}
+
 /* Main */
 .main {
   flex: 1;

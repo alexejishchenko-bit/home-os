@@ -13,10 +13,15 @@ const CATEGORIES: { value: Category; label: string; icon: string }[] = [
 const PEOPLE: { value: Person; label: string }[] = [
   { value: null, label: 'Оба' },
   { value: 'alex', label: 'Алексей' },
-  { value: 'kate', label: 'Катя' },
+  { value: 'kate', label: 'Жиня' },
 ]
 
-export default function HomePage() {
+const USER_TO_PERSON: Record<'lesha' | 'jinya', Person> = {
+  lesha: 'alex',
+  jinya: 'kate',
+}
+
+export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jinya' }) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Category | 'all'>('all')
@@ -25,7 +30,7 @@ export default function HomePage() {
   // New task form
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<Category>('task')
-  const [assignedTo, setAssignedTo] = useState<Person>(null)
+  const [assignedTo, setAssignedTo] = useState<Person>(USER_TO_PERSON[currentUser])
   const [dueDate, setDueDate] = useState('')
   const [adding, setAdding] = useState(false)
 
