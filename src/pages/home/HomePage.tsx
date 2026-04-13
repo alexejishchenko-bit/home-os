@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Task, Category, Person } from '../../lib/types'
+import Calendar from '../../components/Calendar'
 import './HomePage.css'
 
-const CATEGORIES: { value: Category; label: string; icon: string }[] = [
-  { value: 'task', label: 'Задачи', icon: '✓' },
-  { value: 'cleaning', label: 'Уборка', icon: '🧹' },
-  { value: 'shopping', label: 'Покупки', icon: '🛒' },
-  { value: 'bill', label: 'Счета', icon: '💳' },
+const CATEGORIES: { value: Category; label: string }[] = [
+  { value: 'task', label: 'Задачи' },
+  { value: 'cleaning', label: 'Уборка' },
+  { value: 'shopping', label: 'Покупки' },
+  { value: 'bill', label: 'Счета' },
 ]
 
 const PEOPLE: { value: Person; label: string }[] = [
@@ -21,11 +22,15 @@ const USER_TO_PERSON: Record<'lesha' | 'jinya', Person> = {
   jinya: 'kate',
 }
 
+type ViewMode = 'list' | 'calendar'
+
 export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jinya' }) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [view, setView] = useState<ViewMode>('list')
   const [filter, setFilter] = useState<Category | 'all'>('all')
   const [showDone, setShowDone] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   // New task form
   const [title, setTitle] = useState('')
@@ -34,9 +39,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const [dueDate, setDueDate] = useState('')
   const [adding, setAdding] = useState(false)
 
-  useEffect(() => {
-    fetchTasks()
-  }, [])
+  useEffect(() => { fetchTasks() }, [])
 
   async function fetchTasks() {
     const { data } = await supabase
@@ -69,7 +72,9 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
       done,
       done_at: done ? new Date().toISOString() : null,
     }).eq('id', task.id)
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, done, done_at: done ? new Date().toISOString() : null } : t))
+    setTasks(prev => prev.map(t =>
+      t.id === task.id ? { ...t, done, done_at: done ? new Date().toISOString() : null } : t
+    ))
   }
 
   async function deleteTask(id: string) {
@@ -77,22 +82,54 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
     setTasks(prev => prev.filter(t => t.id !== id))
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const activeTasks = tasks.filter(t => !t.done)
+  const overdue = activeTasks.filter(t => t.due_date && t.due_date < todayStr)
+
   const filtered = tasks.filter(t => {
     if (!showDone && t.done) return false
     if (filter !== 'all' && t.category !== filter) return false
+    if (selectedDate && t.due_date !== selectedDate) return false
     return true
   })
-
-  const activeTasks = tasks.filter(t => !t.done)
-  const overdue = activeTasks.filter(t => t.due_date && t.due_date < new Date().toISOString().slice(0, 10))
 
   return (
     <div className="page">
       <div className="home-header">
-        <h1 className="page-title home">Дом</h1>
-        {overdue.length > 0 && (
-          <span className="overdue-badge">{overdue.length} просрочено</span>
-        )}
+        <div className="home-title-row">
+          <h1 className="page-title home">Дом</h1>
+          {overdue.length > 0 && (
+            <span className="overdue-badge">{overdue.length} просрочено</span>
+          )}
+        </div>
+        <div className="view-toggle">
+          <button
+            className={`view-btn ${view === 'list' ? 'active' : ''}`}
+            onClick={() => { setView('list'); setSelectedDate(null) }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            Список
+          </button>
+          <button
+            className={`view-btn ${view === 'calendar' ? 'active' : ''}`}
+            onClick={() => setView('calendar')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Календарь
+          </button>
+        </div>
       </div>
 
       {/* Add form */}
@@ -112,81 +149,81 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
         <div className="add-meta">
           <div className="seg-group">
             {CATEGORIES.map(c => (
-              <button
-                key={c.value}
-                type="button"
+              <button key={c.value} type="button"
                 className={`seg-btn ${category === c.value ? 'active' : ''}`}
-                onClick={() => setCategory(c.value)}
-              >
+                onClick={() => setCategory(c.value)}>
                 {c.label}
               </button>
             ))}
           </div>
           <div className="seg-group">
             {PEOPLE.map(p => (
-              <button
-                key={String(p.value)}
-                type="button"
+              <button key={String(p.value)} type="button"
                 className={`seg-btn ${assignedTo === p.value ? 'active' : ''}`}
-                onClick={() => setAssignedTo(p.value)}
-              >
+                onClick={() => setAssignedTo(p.value)}>
                 {p.label}
               </button>
             ))}
           </div>
-          <input
-            type="date"
-            className="date-input"
-            value={dueDate}
-            onChange={e => setDueDate(e.target.value)}
-          />
+          <input type="date" className="date-input" value={dueDate}
+            onChange={e => setDueDate(e.target.value)} />
         </div>
       </form>
 
-      {/* Filters */}
-      <div className="filters">
-        <div className="seg-group">
-          <button
-            className={`seg-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            Все ({activeTasks.length})
+      {/* Calendar view */}
+      {view === 'calendar' && (
+        <Calendar
+          tasks={tasks}
+          selectedDate={selectedDate}
+          onDayClick={date => setSelectedDate(date)}
+        />
+      )}
+
+      {/* Filters (list only) */}
+      {view === 'list' && (
+        <div className="filters">
+          <div className="seg-group">
+            <button className={`seg-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}>
+              Все ({activeTasks.length})
+            </button>
+            {CATEGORIES.map(c => {
+              const count = activeTasks.filter(t => t.category === c.value).length
+              return (
+                <button key={c.value}
+                  className={`seg-btn ${filter === c.value ? 'active' : ''}`}
+                  onClick={() => setFilter(c.value)}>
+                  {c.label} {count > 0 && <span className="count">{count}</span>}
+                </button>
+              )
+            })}
+          </div>
+          <button className={`toggle-done ${showDone ? 'active' : ''}`}
+            onClick={() => setShowDone(!showDone)}>
+            {showDone ? 'Скрыть выполненные' : 'Показать выполненные'}
           </button>
-          {CATEGORIES.map(c => {
-            const count = activeTasks.filter(t => t.category === c.value).length
-            return (
-              <button
-                key={c.value}
-                className={`seg-btn ${filter === c.value ? 'active' : ''}`}
-                onClick={() => setFilter(c.value)}
-              >
-                {c.label} {count > 0 && <span className="count">{count}</span>}
-              </button>
-            )
-          })}
         </div>
-        <button
-          className={`toggle-done ${showDone ? 'active' : ''}`}
-          onClick={() => setShowDone(!showDone)}
-        >
-          {showDone ? 'Скрыть выполненные' : 'Показать выполненные'}
-        </button>
-      </div>
+      )}
+
+      {/* Selected date label in calendar mode */}
+      {view === 'calendar' && selectedDate && (
+        <div className="cal-date-label">
+          <span>Задачи на {formatDate(selectedDate)}</span>
+          <button className="cal-date-clear" onClick={() => setSelectedDate(null)}>Все даты</button>
+        </div>
+      )}
 
       {/* Task list */}
       {loading ? (
         <div className="empty">Загрузка...</div>
       ) : filtered.length === 0 ? (
-        <div className="empty">Задач нет</div>
+        <div className="empty">{selectedDate ? 'Нет задач на этот день' : 'Задач нет'}</div>
       ) : (
         <ul className="task-list">
           {filtered.map(task => (
-            <TaskItem
-              key={task.id}
-              task={task}
+            <TaskItem key={task.id} task={task}
               onToggle={() => toggleDone(task)}
-              onDelete={() => deleteTask(task.id)}
-            />
+              onDelete={() => deleteTask(task.id)} />
           ))}
         </ul>
       )}
@@ -195,9 +232,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
 }
 
 function TaskItem({ task, onToggle, onDelete }: {
-  task: Task
-  onToggle: () => void
-  onDelete: () => void
+  task: Task; onToggle: () => void; onDelete: () => void
 }) {
   const isOverdue = !task.done && task.due_date && task.due_date < new Date().toISOString().slice(0, 10)
   const cat = CATEGORIES.find(c => c.value === task.category)
@@ -214,9 +249,7 @@ function TaskItem({ task, onToggle, onDelete }: {
           <span className="tag">{cat?.label}</span>
           {person?.label && <span className="tag">{person.label}</span>}
           {task.due_date && (
-            <span className={`tag ${isOverdue ? 'tag-red' : ''}`}>
-              {formatDate(task.due_date)}
-            </span>
+            <span className={`tag ${isOverdue ? 'tag-red' : ''}`}>{formatDate(task.due_date)}</span>
           )}
         </div>
       </div>

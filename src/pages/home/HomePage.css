@@ -1,8 +1,77 @@
 .home-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.home-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* View toggle */
+.view-toggle {
+  display: flex;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.view-btn:hover {
+  color: var(--text);
+}
+
+.view-btn.active {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Calendar date label */
+.cal-date-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.cal-date-clear {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 3px 10px;
+  transition: color 0.15s;
+}
+
+.cal-date-clear:hover {
+  color: var(--text);
 }
 
 .overdue-badge {
