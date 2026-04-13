@@ -1,0 +1,100 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.nav-logo {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.nav-links a.active {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.nav-links a.active.home   { color: var(--accent-home); }
+.nav-links a.active.health { color: var(--accent-health); }
+.nav-links a.active.sport  { color: var(--accent-sport); }
+.nav-links a.active.travel { color: var(--accent-travel); }
+
+/* Main */
+.main {
+  flex: 1;
+  padding: 32px 24px;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Page */
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.page-title.home   { color: var(--accent-home); }
+.page-title.health { color: var(--accent-health); }
+.page-title.sport  { color: var(--accent-sport); }
+.page-title.travel { color: var(--accent-travel); }
+
+.page-stub {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .nav {
+    padding: 0 16px;
+    gap: 16px;
+  }
+
+  .nav-links a {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .main {
+    padding: 24px 16px;
+  }
+}
