@@ -1,0 +1,71 @@
+.health-btn {
+  background: var(--accent-health) !important;
+  color: #fff !important;
+  align-self: flex-start;
+}
+
+/* Health cards */
+.health-list { display: flex; flex-direction: column; gap: 10px; }
+
+.health-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.health-card-top { display: flex; align-items: flex-start; gap: 12px; }
+
+.health-card-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.health-type-tag {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-health);
+  background: rgba(248, 113, 113, 0.1);
+  border-radius: 5px;
+  padding: 2px 8px;
+  align-self: flex-start;
+}
+
+.health-card-title { font-size: 15px; font-weight: 500; color: var(--text); }
+
+.health-card-meta { display: flex; gap: 12px; font-size: 13px; color: var(--text-muted); }
+
+.health-notes {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.health-next {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  background: var(--surface2);
+  border-radius: 7px;
+  padding: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.health-next.overdue { background: rgba(248, 113, 113, 0.08); color: #f87171; }
+.health-next-label { font-weight: 600; color: var(--text-muted); }
+.health-next.overdue .health-next-label { color: #f87171; }
+.health-next-date { margin-left: auto; font-weight: 500; }
+
+.health-card .delete-btn { opacity: 0; }
+.health-card:hover .delete-btn { opacity: 1; }
