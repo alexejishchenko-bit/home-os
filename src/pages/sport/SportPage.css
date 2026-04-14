@@ -1,31 +1,118 @@
-.sport-forms {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.form-section-title {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
 .sport-btn {
   background: var(--accent-sport) !important;
   color: #000 !important;
   align-self: flex-start;
+  white-space: nowrap;
 }
 
-/* Workout list */
-.workout-list {
+/* Weekly summary */
+.week-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.week-stat {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.week-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-sport);
+  letter-spacing: -0.5px;
+}
+
+.week-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Exercise form */
+.exercises-block {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
+.exercises-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.volume-preview {
+  font-size: 12px;
+  color: var(--accent-sport);
+  font-weight: 500;
+}
+
+.exercises-labels {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px 70px 28px;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.exercises-labels span {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.exercise-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px 70px 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.ex-name { min-width: 0; }
+
+.ex-num {
+  padding: 8px 8px !important;
+  text-align: center;
+}
+
+.ex-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.ex-remove:hover { color: #f87171; }
+
+.ex-add-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 8px;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: center;
+}
+
+.ex-add-btn:hover { border-color: #555; color: var(--text); }
+
+/* Workout list */
+.workout-list { display: flex; flex-direction: column; gap: 10px; }
 
 .workout-card {
   background: var(--surface);
@@ -34,13 +121,14 @@
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .workout-top {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .workout-left {
@@ -49,6 +137,7 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .workout-type-tag {
@@ -60,32 +149,65 @@
   background: rgba(96, 165, 250, 0.1);
   border-radius: 5px;
   padding: 2px 8px;
+  white-space: nowrap;
 }
 
-.workout-date {
-  font-size: 14px;
-  color: var(--text);
+.workout-date { font-size: 14px; color: var(--text); }
+
+.workout-meta-item { font-size: 13px; color: var(--text-muted); }
+
+.workout-totals { display: flex; gap: 6px; }
+
+.workout-total-chip {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-sport);
+  background: rgba(96, 165, 250, 0.1);
+  border-radius: 20px;
+  padding: 2px 10px;
+  white-space: nowrap;
 }
 
-.workout-duration {
+/* Exercises table */
+.exercises-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 13px;
-  color: var(--text-muted);
 }
+
+.exercises-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.exercises-table td {
+  padding: 7px 8px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.exercises-table tr:last-child td { border-bottom: none; }
+
+.vol-cell { color: var(--accent-sport); font-weight: 500; }
 
 .workout-notes {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
-/* Weight */
-.weight-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+.workout-card .delete-btn { opacity: 0; }
+.workout-card:hover .delete-btn { opacity: 1; }
+
+/* Weight section */
+.weight-section { display: flex; flex-direction: column; gap: 16px; }
 
 .weight-summary {
   background: var(--surface);
@@ -97,11 +219,7 @@
   gap: 16px;
 }
 
-.weight-current {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
+.weight-current { display: flex; align-items: baseline; gap: 4px; }
 
 .weight-num {
   font-size: 36px;
@@ -110,10 +228,7 @@
   letter-spacing: -1px;
 }
 
-.weight-unit {
-  font-size: 16px;
-  color: var(--text-muted);
-}
+.weight-unit { font-size: 16px; color: var(--text-muted); }
 
 .weight-diff {
   font-size: 14px;
@@ -122,21 +237,10 @@
   border-radius: 20px;
 }
 
-.weight-diff.up {
-  background: rgba(248, 113, 113, 0.15);
-  color: #f87171;
-}
+.weight-diff.up   { background: rgba(248,113,113,0.15); color: #f87171; }
+.weight-diff.down { background: rgba(74,222,128,0.15);  color: var(--accent-home); }
 
-.weight-diff.down {
-  background: rgba(74, 222, 128, 0.15);
-  color: var(--accent-home);
-}
-
-.weight-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.weight-list { display: flex; flex-direction: column; gap: 4px; }
 
 .weight-row {
   display: flex;
@@ -148,24 +252,31 @@
   border-radius: 8px;
 }
 
-.weight-date {
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-muted);
+.weight-date { flex: 1; font-size: 14px; color: var(--text-muted); }
+.weight-val  { font-size: 15px; font-weight: 500; color: var(--text); }
+
+.weight-row .delete-btn { opacity: 0; }
+.weight-row:hover .delete-btn { opacity: 1; }
+
+/* Chart */
+.chart-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
 }
 
-.weight-val {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
+.chart-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
 }
 
 /* Sub tabs */
-.sub-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-}
+.sub-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
 
 .sub-tab {
   background: var(--surface2);
@@ -182,9 +293,67 @@
 }
 
 .sub-tab:hover { color: var(--text); }
+.sub-tab.active { background: var(--surface); color: var(--text); outline: 1px solid var(--border); }
 
-.sub-tab.active {
+/* Progress */
+.progress-section { display: flex; flex-direction: column; gap: 16px; }
+
+.exercise-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.exercise-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 14px;
+  transition: all 0.15s;
+}
+
+.exercise-chip:hover { color: var(--text); }
+.exercise-chip.active {
+  background: rgba(96,165,250,0.12);
+  border-color: var(--accent-sport);
+  color: var(--accent-sport);
+}
+
+.progress-charts { display: flex; flex-direction: column; gap: 12px; }
+
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.progress-stat {
   background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-stat-label { font-size: 12px; color: var(--text-muted); }
+
+.progress-stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
   color: var(--text);
-  outline: 1px solid var(--border);
+}
+
+.progress-stat-val.pos { color: var(--accent-home); }
+.progress-stat-val.neg { color: #f87171; }
+
+@media (max-width: 600px) {
+  .exercises-labels,
+  .exercise-row {
+    grid-template-columns: 1fr 50px 50px 60px 24px;
+  }
+
+  .week-summary { flex-direction: column; }
+  .progress-stats { grid-template-columns: 1fr 1fr; }
 }

@@ -31,7 +31,7 @@ export interface Workout {
   person: string
   date: string
   type: string
-  exercises: { name: string; sets?: number; reps?: number; weight?: number }[] | null
+  exercises: { name: string; sets: number; reps: number; weight: number }[] | null
   duration_min: number | null
   notes: string | null
   created_at: string
