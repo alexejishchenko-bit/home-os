@@ -166,6 +166,120 @@
 .task-item .delete-btn { opacity: 0; }
 .task-item:hover .delete-btn { opacity: 1; }
 
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  max-height: 90dvh;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.modal-close:hover { color: var(--text); }
+
+.modal-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.modal-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  gap: 8px;
+}
+
+.modal-delete {
+  background: none;
+  border: none;
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 0;
+  transition: opacity 0.15s;
+}
+
+.modal-delete:hover { opacity: 0.7; }
+
+.modal-cancel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: background 0.15s;
+}
+
+.modal-cancel:hover { background: var(--border); }
+
+.modal-save {
+  background: var(--accent-home);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 20px;
+  transition: opacity 0.15s;
+}
+
+.modal-save:disabled { opacity: 0.4; }
+.modal-save:not(:disabled):hover { opacity: 0.85; }
+
 @media (max-width: 600px) {
   .filters { flex-direction: column; align-items: flex-start; }
   .task-item .delete-btn { opacity: 1; }

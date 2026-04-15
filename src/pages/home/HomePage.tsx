@@ -31,6 +31,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const [filter, setFilter] = useState<Category | 'all'>('all')
   const [showDone, setShowDone] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   // New task form
   const [title, setTitle] = useState('')
@@ -80,6 +81,13 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   async function deleteTask(id: string) {
     await supabase.from('tasks').delete().eq('id', id)
     setTasks(prev => prev.filter(t => t.id !== id))
+    if (editingTask?.id === id) setEditingTask(null)
+  }
+
+  async function updateTask(id: string, patch: Partial<Task>) {
+    await supabase.from('tasks').update(patch).eq('id', id)
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t))
+    setEditingTask(prev => prev?.id === id ? { ...prev, ...patch } : prev)
   }
 
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -223,16 +231,27 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
           {filtered.map(task => (
             <TaskItem key={task.id} task={task}
               onToggle={() => toggleDone(task)}
-              onDelete={() => deleteTask(task.id)} />
+              onDelete={() => deleteTask(task.id)}
+              onEdit={() => setEditingTask(task)} />
           ))}
         </ul>
+      )}
+
+      {/* Edit modal */}
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          onSave={(patch) => updateTask(editingTask.id, patch)}
+          onDelete={() => deleteTask(editingTask.id)}
+        />
       )}
     </div>
   )
 }
 
-function TaskItem({ task, onToggle, onDelete }: {
-  task: Task; onToggle: () => void; onDelete: () => void
+function TaskItem({ task, onToggle, onDelete, onEdit }: {
+  task: Task; onToggle: () => void; onDelete: () => void; onEdit: () => void
 }) {
   const isOverdue = !task.done && task.due_date && task.due_date < new Date().toISOString().slice(0, 10)
   const cat = CATEGORIES.find(c => c.value === task.category)
@@ -243,7 +262,7 @@ function TaskItem({ task, onToggle, onDelete }: {
       <button className="check-btn" onClick={onToggle} aria-label="toggle">
         <span className="check-icon">{task.done ? '✓' : ''}</span>
       </button>
-      <div className="task-body">
+      <div className="task-body" onClick={onEdit} style={{ cursor: 'pointer' }}>
         <span className="task-title">{task.title}</span>
         <div className="task-meta">
           <span className="tag">{cat?.label}</span>
@@ -251,10 +270,90 @@ function TaskItem({ task, onToggle, onDelete }: {
           {task.due_date && (
             <span className={`tag ${isOverdue ? 'tag-red' : ''}`}>{formatDate(task.due_date)}</span>
           )}
+          {task.notes && <span className="tag">заметка</span>}
         </div>
       </div>
       <button className="delete-btn" onClick={onDelete} aria-label="delete">×</button>
     </li>
+  )
+}
+
+function TaskEditModal({ task, onClose, onSave, onDelete }: {
+  task: Task
+  onClose: () => void
+  onSave: (patch: Partial<Task>) => void
+  onDelete: () => void
+}) {
+  const [title, setTitle] = useState(task.title)
+  const [category, setCategory] = useState<Category>(task.category)
+  const [assignedTo, setAssignedTo] = useState<Person>(task.assigned_to)
+  const [dueDate, setDueDate] = useState(task.due_date ?? '')
+  const [notes, setNotes] = useState(task.notes ?? '')
+
+  function handleSave() {
+    onSave({ title: title.trim(), category, assigned_to: assignedTo, due_date: dueDate || null, notes: notes || null })
+    onClose()
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title">Редактировать задачу</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+
+        <div className="modal-body">
+          <input className="add-input" value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Название задачи" />
+
+          <div className="modal-label">Категория</div>
+          <div className="seg-group">
+            {CATEGORIES.map(c => (
+              <button key={c.value} type="button"
+                className={`seg-btn ${category === c.value ? 'active' : ''}`}
+                onClick={() => setCategory(c.value)}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="modal-label">Кто</div>
+          <div className="seg-group">
+            {PEOPLE.map(p => (
+              <button key={String(p.value)} type="button"
+                className={`seg-btn ${assignedTo === p.value ? 'active' : ''}`}
+                onClick={() => setAssignedTo(p.value)}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="modal-label">Дедлайн</div>
+          <input className="add-input" type="date" value={dueDate}
+            onChange={e => setDueDate(e.target.value)}
+            style={{ colorScheme: 'dark' }} />
+
+          <div className="modal-label">Заметки</div>
+          <textarea className="add-input textarea" value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Дополнительные детали..." rows={3} />
+        </div>
+
+        <div className="modal-footer">
+          <button className="modal-delete" onClick={() => { onDelete(); onClose() }}>
+            Удалить
+          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="modal-cancel" onClick={onClose}>Отмена</button>
+            <button className="modal-save" onClick={handleSave} disabled={!title.trim()}>
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
