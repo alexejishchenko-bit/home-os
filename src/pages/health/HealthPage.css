@@ -21,6 +21,7 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
+  min-width: 0;
   max-width: 320px;
 }
 
@@ -118,6 +119,12 @@
 .health-card:hover .delete-btn { opacity: 1; }
 
 @media (max-width: 600px) {
+  .add-form > .form-row {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .health-form-options {
     width: 100%;
     align-items: stretch;
@@ -145,6 +152,18 @@
   .health-form-options ~ textarea {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
+  }
+
+  .health-date-field > .add-input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .health-reminder-field { max-width: none; width: 100%; }
