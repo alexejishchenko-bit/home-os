@@ -4,6 +4,19 @@
   align-self: flex-start;
 }
 
+.health-date-field {
+  display: flex;
+  flex: 1;
+  min-width: 140px;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.health-date-field .add-input {
+  min-width: 0;
+  color-scheme: dark;
+}
+
 .health-reminder-field {
   display: flex;
   flex-direction: column;
@@ -98,3 +111,37 @@
 
 .health-card .delete-btn { opacity: 0; }
 .health-card:hover .delete-btn { opacity: 1; }
+
+@media (max-width: 600px) {
+  .health-form-options {
+    width: 100%;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .health-person-options { align-self: flex-start; }
+
+  .health-type-options {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .health-type-options::-webkit-scrollbar { display: none; }
+
+  .health-date-field,
+  .health-form-options + .add-input,
+  .health-form-options ~ .form-row,
+  .health-form-options ~ .add-input,
+  .health-form-options ~ textarea {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .health-reminder-field { max-width: none; width: 100%; }
+  .health-btn { width: 100%; }
+}

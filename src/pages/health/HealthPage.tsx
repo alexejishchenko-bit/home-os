@@ -91,8 +91,8 @@ export default function HealthPage() {
       {/* Add form */}
       {showForm && (
         <form className="add-form" onSubmit={addEvent}>
-          <div className="form-row">
-            <div className="seg-group">
+          <div className="form-row health-form-options">
+            <div className="seg-group health-person-options">
               {PEOPLE.map(p => (
                 <button key={p.value} type="button"
                   className={`seg-btn ${person === p.value ? 'active' : ''}`}
@@ -101,7 +101,7 @@ export default function HealthPage() {
                 </button>
               ))}
             </div>
-            <div className="seg-group">
+            <div className="seg-group health-type-options" aria-label="Тип события">
               {TYPES.map(t => (
                 <button key={t.value} type="button"
                   className={`seg-btn ${type === t.value ? 'active' : ''}`}
@@ -114,8 +114,11 @@ export default function HealthPage() {
           <input className="add-input" placeholder="Название / тема" value={title}
             onChange={e => setTitle(e.target.value)} />
           <div className="form-row">
-            <input className="add-input" type="date" value={date}
-              onChange={e => setDate(e.target.value)} placeholder="Дата" />
+            <label className="health-date-field">
+              <span className="health-form-label">Дата</span>
+              <input className="add-input" type="date" value={date}
+                onChange={e => setDate(e.target.value)} />
+            </label>
             <input className="add-input" placeholder="Врач / клиника" value={doctor}
               onChange={e => setDoctor(e.target.value)} />
           </div>
@@ -124,8 +127,11 @@ export default function HealthPage() {
           <div className="form-row">
             <input className="add-input" placeholder="Следующий шаг" value={nextStep}
               onChange={e => setNextStep(e.target.value)} />
-            <input className="add-input" type="date" value={nextDate}
-              onChange={e => setNextDate(e.target.value)} />
+            <label className="health-date-field">
+              <span className="health-form-label">Дата следующего шага</span>
+              <input className="add-input" type="date" value={nextDate}
+                onChange={e => setNextDate(e.target.value)} />
+            </label>
           </div>
           <label className="health-reminder-field">
             <span className="health-form-label">Напомнить в Telegram</span>
