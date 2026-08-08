@@ -36,6 +36,7 @@ export default function TravelPage() {
   const [coverUploadingId, setCoverUploadingId] = useState<string | null>(null)
   const [enrichingId, setEnrichingId] = useState<string | null>(null)
   const [openPlace, setOpenPlace] = useState<Place | null>(null)
+  const [editingPlace, setEditingPlace] = useState<Place | null>(null)
 
   useEffect(() => {
     async function loadPlaces() {
@@ -132,6 +133,11 @@ export default function TravelPage() {
   function openDetails(place: Place) {
     setOpenPlace(place)
     if (!place.enriched_at) void enrichPlace(place)
+  }
+
+  async function savePlace(updated: Place) {
+    replacePlace(updated)
+    setEditingPlace(null)
   }
 
   const filtered = places.filter(p =>
@@ -243,7 +249,12 @@ export default function TravelPage() {
 
       {openPlace && (
         <PlaceDetail place={openPlace} enriching={enrichingId === openPlace.id}
-          onClose={() => setOpenPlace(null)} onRefresh={() => enrichPlace(openPlace)} />
+          onClose={() => setOpenPlace(null)} onRefresh={() => enrichPlace(openPlace)}
+          onEdit={() => setEditingPlace(openPlace)} />
+      )}
+
+      {editingPlace && (
+        <PlaceEditModal place={editingPlace} onClose={() => setEditingPlace(null)} onSave={savePlace} />
       )}
     </div>
   )
@@ -320,11 +331,12 @@ function PlaceCard({ place, onOpen, onStatusChange, onCoverChange, coverUploadin
   )
 }
 
-function PlaceDetail({ place, enriching, onClose, onRefresh }: {
+function PlaceDetail({ place, enriching, onClose, onRefresh, onEdit }: {
   place: Place
   enriching: boolean
   onClose: () => void
   onRefresh: () => void
+  onEdit: () => void
 }) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
@@ -348,9 +360,12 @@ function PlaceDetail({ place, enriching, onClose, onRefresh }: {
               <h2>{place.title}</h2>
               {(place.city || place.country) && <p>{[place.city, place.country].filter(Boolean).join(', ')}</p>}
             </div>
-            <button className="place-enrich-button" onClick={onRefresh} disabled={enriching}>
-              {enriching ? 'Ищем фото и маршрут…' : place.enriched_at ? 'Обновить данные' : 'Найти фото и маршрут'}
-            </button>
+            <div className="place-detail-actions">
+              <button className="place-edit-button" onClick={onEdit}>Редактировать</button>
+              <button className="place-enrich-button" onClick={onRefresh} disabled={enriching}>
+                {enriching ? 'Ищем фото и маршрут…' : place.enriched_at ? 'Обновить данные' : 'Найти фото и маршрут'}
+              </button>
+            </div>
           </div>
 
           {(place.distance_km != null || place.drive_minutes != null) && (
@@ -379,6 +394,96 @@ function PlaceDetail({ place, enriching, onClose, onRefresh }: {
           )}
         </div>
       </article>
+    </div>
+  )
+}
+
+function PlaceEditModal({ place, onClose, onSave }: {
+  place: Place
+  onClose: () => void
+  onSave: (place: Place) => void
+}) {
+  const [title, setTitle] = useState(place.title)
+  const [country, setCountry] = useState(place.country ?? '')
+  const [city, setCity] = useState(place.city ?? '')
+  const [status, setStatus] = useState<Place['status']>(place.status)
+  const [tags, setTags] = useState((place.tags ?? []).join(', '))
+  const [links, setLinks] = useState((place.links ?? []).map(item => item.url).join('\n'))
+  const [notes, setNotes] = useState(place.notes ?? '')
+  const [imageUrl, setImageUrl] = useState(place.image_url ?? '')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!title.trim() || saving) return
+    setSaving(true)
+    try {
+      const identityChanged = title.trim() !== place.title || city.trim() !== (place.city ?? '') || country.trim() !== (place.country ?? '')
+      let nextImageUrl = imageUrl.trim() || null
+      if (imageFile) nextImageUrl = await uploadCover(imageFile, 'travel')
+      const parsedTags = tags.split(',').map(tag => tag.trim()).filter(Boolean)
+      const parsedLinks = links.split('\n').map(url => url.trim()).filter(Boolean)
+      const patch = {
+        title: title.trim(),
+        country: country.trim() || null,
+        city: city.trim() || null,
+        status,
+        tags: parsedTags.length ? parsedTags : null,
+        links: parsedLinks.length ? parsedLinks.map(url => ({ url, type: 'other' })) : null,
+        notes: notes.trim() || null,
+        image_url: nextImageUrl,
+        ...(identityChanged ? {
+          photos: null,
+          latitude: null,
+          longitude: null,
+          distance_km: null,
+          drive_minutes: null,
+          enriched_at: null,
+        } : {}),
+      }
+      const { data, error } = await supabase.from('places').update(patch).eq('id', place.id).select().single()
+      if (error) throw error
+      onSave(data as Place)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Не удалось сохранить изменения')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="place-modal-overlay place-edit-overlay" onClick={onClose}>
+      <form className="place-edit-modal" onSubmit={handleSubmit} onClick={event => event.stopPropagation()}>
+        <div className="place-edit-header">
+          <div><span>Путешествия</span><h2>Редактировать место</h2></div>
+          <button type="button" className="place-detail-close place-edit-close" onClick={onClose} aria-label="Закрыть">×</button>
+        </div>
+        <label className="place-edit-field"><span>Название</span><input className="add-input" value={title} onChange={event => setTitle(event.target.value)} /></label>
+        <div className="form-row">
+          <label className="place-edit-field"><span>Страна</span><input className="add-input" value={country} onChange={event => setCountry(event.target.value)} /></label>
+          <label className="place-edit-field"><span>Город</span><input className="add-input" value={city} onChange={event => setCity(event.target.value)} /></label>
+        </div>
+        <div className="place-edit-field"><span>Статус</span><div className="seg-group">
+          {STATUSES.map(item => <button key={item.value} type="button" className={`seg-btn ${status === item.value ? 'active' : ''}`}
+            onClick={() => setStatus(item.value as Place['status'])}>{item.label}</button>)}
+        </div></div>
+        <label className="place-edit-field"><span>Теги</span><input className="add-input" value={tags} placeholder="горы, море, культура" onChange={event => setTags(event.target.value)} /></label>
+        <label className="place-edit-field"><span>Ссылки — одна на строку</span><textarea className="add-input textarea" rows={2}
+          value={links} placeholder="https://…" onChange={event => setLinks(event.target.value)} /></label>
+        <label className="place-edit-field"><span>Заметки</span><textarea className="add-input textarea" rows={4} value={notes} onChange={event => setNotes(event.target.value)} /></label>
+        <div className="place-edit-field"><span>Обложка</span><CoverPicker value={imageUrl} file={imageFile}
+          onValueChange={setImageUrl} onFileChange={setImageFile} /></div>
+        <div className="place-edit-footer">
+          <button type="button" className="place-edit-cancel" onClick={onClose}>Отмена</button>
+          <button type="submit" className="add-btn travel-btn" disabled={saving || !title.trim()}>{saving ? 'Сохраняем…' : 'Сохранить'}</button>
+        </div>
+      </form>
     </div>
   )
 }

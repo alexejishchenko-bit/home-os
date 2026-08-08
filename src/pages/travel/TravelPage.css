@@ -259,6 +259,47 @@
 
 .place-enrich-button:disabled { cursor: wait; opacity: .55; }
 
+.place-detail-actions { display: flex; flex-shrink: 0; gap: 8px; }
+
+.place-edit-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.place-edit-button:hover { border-color: var(--border-strong); color: var(--text); }
+
+.place-edit-overlay { z-index: 70; }
+
+.place-edit-modal {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: min(820px, calc(100dvh - 48px));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 24px;
+  background: var(--surface);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .5);
+}
+
+.place-edit-header { display: flex; align-items: flex-start; justify-content: space-between; padding-right: 42px; }
+.place-edit-header span, .place-edit-field > span { color: var(--text-faint); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.place-edit-header h2 { margin-top: 5px; color: var(--text); font-size: 22px; }
+.place-edit-close { top: 18px; right: 18px; }
+.place-edit-field { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 7px; }
+.place-edit-field .add-input { width: 100%; }
+.place-edit-footer { display: flex; justify-content: flex-end; gap: 9px; padding-top: 4px; }
+.place-edit-footer .travel-btn { align-self: auto; }
+.place-edit-cancel { border: 1px solid var(--border); border-radius: 8px; padding: 9px 15px; background: transparent; color: var(--text-muted); }
+.place-edit-cancel:hover { color: var(--text); border-color: var(--border-strong); }
+
 .place-route-card {
   display: flex;
   align-items: center;
@@ -297,9 +338,13 @@
   .place-detail-body { padding: 19px 17px 28px; }
   .place-detail-heading { flex-direction: column; }
   .place-detail-heading h2 { font-size: 21px; padding-right: 30px; }
-  .place-enrich-button { width: 100%; }
+  .place-detail-actions { width: 100%; }
+  .place-detail-actions button { flex: 1; }
   .place-route-card { align-items: flex-start; flex-wrap: wrap; }
   .place-route-card a { width: 100%; padding-left: 46px; }
+  .place-edit-modal { width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; padding: 20px 17px 28px; }
+  .place-edit-modal .form-row { flex-direction: column; }
+  .place-edit-footer { position: sticky; bottom: -28px; margin: 0 -17px -28px; padding: 14px 17px 20px; background: linear-gradient(transparent, var(--surface) 18%); }
 }
 
 /* Docs placeholder */
