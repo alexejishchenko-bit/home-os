@@ -61,14 +61,19 @@ export default function App() {
 
         <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-brand">
-            <div className="sidebar-mark" aria-hidden="true">H</div>
+            <div className="sidebar-mark" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
             <div>
               <div className="sidebar-logo">HomeOS</div>
-              <div className="sidebar-kicker">пространство для двоих</div>
+              <div className="sidebar-kicker">Лёша + Жиня</div>
             </div>
           </div>
 
           <nav className="sidebar-nav">
+            <div className="sidebar-section-label">Пространство</div>
             {NAV.map(({ to, end, label, cls, icon }) => (
               <NavLink
                 key={to}
@@ -87,6 +92,7 @@ export default function App() {
             <div className="sidebar-avatar">{user.displayName[0]}</div>
             <div className="sidebar-user-info">
               <span className="sidebar-username">{user.displayName}</span>
+              <span className="sidebar-user-status">Личное пространство</span>
             </div>
             <button className="sidebar-logout" onClick={handleLogout} title="Выйти">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -100,14 +106,19 @@ export default function App() {
 
         <div className="content">
           <header className="topbar">
-            <button className="burger" onClick={() => setSidebarOpen(true)}>
+            <button className="burger" onClick={() => setSidebarOpen(true)} aria-label="Открыть навигацию">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <line x1="3" y1="12" x2="21" y2="12"/>
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-            <span className="topbar-logo">HomeOS</span>
+            <div className="topbar-context">
+              <span className="topbar-logo">HomeOS</span>
+              <span className="topbar-separator">/</span>
+              <span className="topbar-section">Обзор</span>
+            </div>
+            <div className="sync-state"><span /> Синхронизировано</div>
             <span className="topbar-person">{user.displayName}</span>
           </header>
 

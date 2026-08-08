@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Task, Category, Person } from '../../lib/types'
 import WeekBoard from '../../components/WeekBoard'
+import { isoDate } from '../../lib/dateUtils'
 import './HomePage.css'
 
 const CATEGORIES: { value: Category; label: string }[] = [
@@ -90,9 +91,11 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
     setEditingTask(prev => prev?.id === id ? { ...prev, ...patch } : prev)
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = isoDate(new Date())
   const activeTasks = tasks.filter(t => !t.done)
   const overdue = activeTasks.filter(t => t.due_date && t.due_date < todayStr)
+  const dueToday = activeTasks.filter(t => t.due_date === todayStr)
+  const completed = tasks.filter(t => t.done)
 
   const filtered = tasks.filter(t => {
     if (!showDone && t.done) return false
@@ -100,14 +103,23 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
     return true
   })
 
+  const filteredOverdue = filtered.filter(t => !t.done && t.due_date && t.due_date < todayStr)
+  const filteredToday = filtered.filter(t => !t.done && t.due_date === todayStr)
+  const filteredNext = filtered.filter(t => !t.done && (!t.due_date || t.due_date > todayStr))
+  const filteredDone = filtered.filter(t => t.done)
+
   return (
     <div className="page">
       <div className="home-header">
-        <div className="home-title-row">
-          <h1 className="page-title home">Дом</h1>
-          {overdue.length > 0 && (
-            <span className="overdue-badge">{overdue.length} просрочено</span>
-          )}
+        <div>
+          <div className="page-eyebrow">Дом · общий трекер</div>
+          <div className="home-title-row">
+            <h1 className="page-title home">Задачи</h1>
+            {overdue.length > 0 && (
+              <span className="overdue-badge">{overdue.length} просрочено</span>
+            )}
+          </div>
+          <p className="page-description">Всё, что нужно не забыть, решить или сделать вместе.</p>
         </div>
         <div className="view-toggle">
           <button
@@ -138,18 +150,38 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
         </div>
       </div>
 
+      <div className="task-overview" aria-label="Сводка по задачам">
+        <div className="overview-item">
+          <span className="overview-value">{activeTasks.length}</span>
+          <span className="overview-label">В работе</span>
+        </div>
+        <div className="overview-item today">
+          <span className="overview-value">{dueToday.length}</span>
+          <span className="overview-label">На сегодня</span>
+        </div>
+        <div className="overview-item overdue">
+          <span className="overview-value">{overdue.length}</span>
+          <span className="overview-label">Просрочено</span>
+        </div>
+        <div className="overview-item completed">
+          <span className="overview-value">{completed.length}</span>
+          <span className="overview-label">Готово</span>
+        </div>
+      </div>
+
       {/* Add form */}
-      <form className="add-form" onSubmit={addTask}>
+      <form className="add-form task-capture" onSubmit={addTask}>
         <div className="add-row">
+          <div className="capture-plus" aria-hidden="true">+</div>
           <input
             className="add-input"
-            placeholder="Что надо сделать?"
+            placeholder="Добавить новую задачу..."
             value={title}
             onChange={e => setTitle(e.target.value)}
             disabled={adding}
           />
           <button className="add-btn" type="submit" disabled={adding || !title.trim()}>
-            Добавить
+            Создать
           </button>
         </div>
         <div className="add-meta">
@@ -212,20 +244,22 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
       )}
 
       {/* Task list */}
-      {loading ? (
+      {view === 'list' && (loading ? (
         <div className="empty">Загрузка...</div>
       ) : filtered.length === 0 ? (
         <div className="empty">Задач нет</div>
       ) : (
-        <ul className="task-list">
-          {filtered.map(task => (
-            <TaskItem key={task.id} task={task}
-              onToggle={() => toggleDone(task)}
-              onDelete={() => deleteTask(task.id)}
-              onEdit={() => setEditingTask(task)} />
-          ))}
-        </ul>
-      )}
+        <div className="task-sections">
+          <TaskSection title="Просрочено" tone="overdue" tasks={filteredOverdue}
+            onToggle={toggleDone} onDelete={deleteTask} onEdit={setEditingTask} />
+          <TaskSection title="Сегодня" tone="today" tasks={filteredToday}
+            onToggle={toggleDone} onDelete={deleteTask} onEdit={setEditingTask} />
+          <TaskSection title="Дальше" tasks={filteredNext}
+            onToggle={toggleDone} onDelete={deleteTask} onEdit={setEditingTask} />
+          {showDone && <TaskSection title="Выполнено" tone="done" tasks={filteredDone}
+            onToggle={toggleDone} onDelete={deleteTask} onEdit={setEditingTask} />}
+        </div>
+      ))}
 
       {/* Edit modal */}
       {editingTask && (
@@ -240,18 +274,49 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   )
 }
 
+function TaskSection({ title, tone = '', tasks, onToggle, onDelete, onEdit }: {
+  title: string
+  tone?: string
+  tasks: Task[]
+  onToggle: (task: Task) => void
+  onDelete: (id: string) => void
+  onEdit: (task: Task) => void
+}) {
+  if (tasks.length === 0) return null
+
+  return (
+    <section className={`task-section ${tone}`}>
+      <header className="task-section-header">
+        <span className="task-section-dot" />
+        <h2>{title}</h2>
+        <span className="task-section-count">{tasks.length}</span>
+      </header>
+      <ul className="task-list">
+        {tasks.map(task => (
+          <TaskItem key={task.id} task={task}
+            onToggle={() => onToggle(task)}
+            onDelete={() => onDelete(task.id)}
+            onEdit={() => onEdit(task)} />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function TaskItem({ task, onToggle, onDelete, onEdit }: {
   task: Task; onToggle: () => void; onDelete: () => void; onEdit: () => void
 }) {
-  const isOverdue = !task.done && task.due_date && task.due_date < new Date().toISOString().slice(0, 10)
+  const isOverdue = !task.done && task.due_date && task.due_date < isoDate(new Date())
   const cat = CATEGORIES.find(c => c.value === task.category)
   const person = PEOPLE.find(p => p.value === task.assigned_to)
 
   return (
     <li className={`task-item ${task.done ? 'done' : ''} ${isOverdue ? 'overdue' : ''}`}>
-      <button className="check-btn" onClick={onToggle} aria-label="toggle">
+      <button className="check-btn" onClick={onToggle}
+        aria-label={task.done ? `Вернуть задачу «${task.title}»` : `Выполнить задачу «${task.title}»`}>
         <span className="check-icon">{task.done ? '✓' : ''}</span>
       </button>
+      <span className={`task-category-marker category-${task.category}`} aria-hidden="true" />
       <div className="task-body" onClick={onEdit} style={{ cursor: 'pointer' }}>
         <span className="task-title">{task.title}</span>
         <div className="task-meta">
@@ -263,7 +328,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: {
           {task.notes && <span className="tag">заметка</span>}
         </div>
       </div>
-      <button className="delete-btn" onClick={onDelete} aria-label="delete">×</button>
+      <button className="delete-btn" onClick={onDelete} aria-label={`Удалить задачу «${task.title}»`}>×</button>
     </li>
   )
 }

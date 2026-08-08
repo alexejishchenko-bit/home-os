@@ -1,5 +1,9 @@
 .week-board {
-  margin-bottom: 20px;
+  margin: 22px 0 20px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
 .wb-header {
@@ -12,22 +16,28 @@
 .wb-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
 }
 
 .wb-col {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-height: 140px;
 }
+.wb-col:last-child { border-right: 0; }
 
 .wb-col.today {
-  border-color: var(--accent-home);
+  background: var(--accent-home-soft);
+  box-shadow: inset 0 2px 0 var(--accent-home);
 }
 
 .wb-col-header {
@@ -72,7 +82,8 @@
   align-items: center;
   gap: 6px;
   background: var(--surface2);
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
   padding: 5px 6px;
   cursor: pointer;
   transition: background 0.15s;
@@ -128,4 +139,5 @@
   .wb-grid {
     grid-template-columns: 1fr;
   }
+  .wb-col { border-right: 0; border-bottom: 1px solid var(--border); }
 }
