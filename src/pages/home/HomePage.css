@@ -150,7 +150,7 @@
   flex-direction: column;
   gap: 7px;
 }
-.reminder-field .add-input { max-width: 280px; color-scheme: dark; }
+.reminder-field .datetime-picker { max-width: 320px; }
 .task-details-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .task-details-label {
   color: var(--text-faint);

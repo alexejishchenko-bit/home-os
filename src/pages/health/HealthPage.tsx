@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { HealthEvent } from '../../lib/types'
+import DateTimePicker from '../../components/DateTimePicker'
 import './HealthPage.css'
 
 const TYPES = [
@@ -8,6 +9,7 @@ const TYPES = [
   { value: 'procedure',    label: 'Процедура' },
   { value: 'aligner',      label: 'Элайнер' },
   { value: 'research',     label: 'Ресёрч' },
+  { value: 'other',        label: 'Другое' },
 ]
 
 const PEOPLE = [
@@ -32,6 +34,7 @@ export default function HealthPage() {
   const [notes, setNotes] = useState('')
   const [nextStep, setNextStep] = useState('')
   const [nextDate, setNextDate] = useState('')
+  const [remindAt, setRemindAt] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -59,9 +62,11 @@ export default function HealthPage() {
       notes: notes || null,
       next_step: nextStep || null,
       next_date: nextDate || null,
+      remind_at: remindAt ? new Date(remindAt).toISOString() : null,
+      reminder_sent_at: null,
     }).select().single()
     if (data) setEvents(prev => [data, ...prev])
-    setTitle(''); setDate(''); setDoctor(''); setNotes(''); setNextStep(''); setNextDate('')
+    setTitle(''); setDate(''); setDoctor(''); setNotes(''); setNextStep(''); setNextDate(''); setRemindAt('')
     setSaving(false)
     setShowForm(false)
   }
@@ -122,6 +127,10 @@ export default function HealthPage() {
             <input className="add-input" type="date" value={nextDate}
               onChange={e => setNextDate(e.target.value)} />
           </div>
+          <label className="health-reminder-field">
+            <span className="health-form-label">Напомнить в Telegram</span>
+            <DateTimePicker value={remindAt} onChange={setRemindAt} />
+          </label>
           <button className="add-btn health-btn" type="submit" disabled={saving || !title.trim()}>
             Сохранить
           </button>
@@ -182,8 +191,19 @@ function HealthCard({ event, todayStr, onDelete }: {
           {event.next_date && <span className="health-next-date">{formatDate(event.next_date)}</span>}
         </div>
       )}
+      {event.remind_at && (
+        <div className={`health-reminder ${event.reminder_sent_at ? 'sent' : ''}`}>
+          {event.reminder_sent_at ? 'Уведомление отправлено' : `Напомнить ${formatDateTime(event.remind_at)}`}
+        </div>
+      )}
     </div>
   )
+}
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString('ru-RU', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+  })
 }
 
 function formatDate(dateStr: string) {

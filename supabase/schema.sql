@@ -27,6 +27,8 @@ create table health_events (
   notes text,
   next_step text,
   next_date date,
+  remind_at timestamptz,
+  reminder_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -93,6 +95,13 @@ create table recipes (
   created_at timestamptz not null default now()
 );
 
+-- Private conversation state for the Telegram bot
+create table telegram_sessions (
+  chat_id bigint primary key,
+  mode text not null check (mode in ('task', 'travel', 'recipe', 'health')),
+  updated_at timestamptz not null default now()
+);
+
 -- RLS: открываем всё без авторизации (семейный инструмент)
 alter table tasks enable row level security;
 alter table health_events enable row level security;
@@ -101,6 +110,7 @@ alter table weight_log enable row level security;
 alter table places enable row level security;
 alter table documents enable row level security;
 alter table recipes enable row level security;
+alter table telegram_sessions enable row level security;
 
 create policy "public access" on tasks for all using (true) with check (true);
 create policy "public access" on health_events for all using (true) with check (true);
@@ -109,3 +119,7 @@ create policy "public access" on weight_log for all using (true) with check (tru
 create policy "public access" on places for all using (true) with check (true);
 create policy "public access" on documents for all using (true) with check (true);
 create policy "public access" on recipes for all using (true) with check (true);
+
+-- No anon/authenticated policies: only the Edge Function service role can use it.
+revoke all on table telegram_sessions from anon, authenticated;
+grant all on table telegram_sessions to service_role;

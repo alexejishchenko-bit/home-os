@@ -1,0 +1,46 @@
+.datetime-picker {
+  position: relative;
+  width: 100%;
+}
+
+.datetime-picker .add-input {
+  width: 100%;
+  padding-right: 46px;
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+.datetime-picker .add-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  width: 32px;
+  cursor: pointer;
+}
+
+.datetime-picker-button {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 1px solid rgba(126, 171, 255, .2);
+  border-radius: 9px;
+  background: rgba(126, 171, 255, .08);
+  color: var(--accent-home);
+}
+
+.datetime-picker-button:hover {
+  border-color: rgba(126, 171, 255, .45);
+  background: rgba(126, 171, 255, .14);
+}
+
+.datetime-picker-button svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

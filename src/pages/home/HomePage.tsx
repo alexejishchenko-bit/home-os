@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Task, Category, Person, TaskStatus, TaskPriority } from '../../lib/types'
 import WeekBoard from '../../components/WeekBoard'
+import DateTimePicker from '../../components/DateTimePicker'
 import { isoDate } from '../../lib/dateUtils'
 import './HomePage.css'
 
@@ -269,8 +270,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
               value={linkUrl} onChange={e => setLinkUrl(e.target.value)} />
             <label className="reminder-field">
               <span className="task-details-label">Напомнить в Telegram</span>
-              <input className="add-input" type="datetime-local" value={remindAt}
-                onChange={e => setRemindAt(e.target.value)} />
+              <DateTimePicker value={remindAt} onChange={setRemindAt} />
             </label>
           </div>
         )}
@@ -508,8 +508,7 @@ function TaskEditModal({ task, onClose, onSave, onDelete }: {
             placeholder="https://..." />
 
           <div className="modal-label">Напомнить в Telegram</div>
-          <input className="add-input" type="datetime-local" value={remindAt}
-            onChange={e => setRemindAt(e.target.value)} />
+          <DateTimePicker value={remindAt} onChange={setRemindAt} />
         </div>
 
         <div className="modal-footer">

@@ -30,6 +30,8 @@ export interface HealthEvent {
   notes: string | null
   next_step: string | null
   next_date: string | null
+  remind_at: string | null
+  reminder_sent_at: string | null
   created_at: string
 }
 
