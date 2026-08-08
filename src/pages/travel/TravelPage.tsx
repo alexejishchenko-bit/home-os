@@ -29,16 +29,17 @@ export default function TravelPage() {
   const [pNotes, setPNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { fetchPlaces() }, [])
-
-  async function fetchPlaces() {
-    const { data } = await supabase
-      .from('places')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setPlaces(data)
-    setLoading(false)
-  }
+  useEffect(() => {
+    async function loadPlaces() {
+      const { data } = await supabase
+        .from('places')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (data) setPlaces(data)
+      setLoading(false)
+    }
+    loadPlaces()
+  }, [])
 
   async function addPlace(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

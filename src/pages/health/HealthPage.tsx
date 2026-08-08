@@ -34,16 +34,17 @@ export default function HealthPage() {
   const [nextDate, setNextDate] = useState('')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { fetchEvents() }, [])
-
-  async function fetchEvents() {
-    const { data } = await supabase
-      .from('health_events')
-      .select('*')
-      .order('date', { ascending: false })
-    if (data) setEvents(data)
-    setLoading(false)
-  }
+  useEffect(() => {
+    async function loadEvents() {
+      const { data } = await supabase
+        .from('health_events')
+        .select('*')
+        .order('date', { ascending: false })
+      if (data) setEvents(data)
+      setLoading(false)
+    }
+    loadEvents()
+  }, [])
 
   async function addEvent(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

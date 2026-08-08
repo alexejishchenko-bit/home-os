@@ -22,16 +22,17 @@ export default function RecipesPage() {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { fetchRecipes() }, [])
-
-  async function fetchRecipes() {
-    const { data } = await supabase
-      .from('recipes')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setRecipes(data)
-    setLoading(false)
-  }
+  useEffect(() => {
+    async function loadRecipes() {
+      const { data } = await supabase
+        .from('recipes')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (data) setRecipes(data)
+      setLoading(false)
+    }
+    loadRecipes()
+  }, [])
 
   function resetForm() {
     setTitle(''); setImageUrl(''); setPrepTime(''); setServings('')

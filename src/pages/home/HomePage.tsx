@@ -39,16 +39,17 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const [dueDate, setDueDate] = useState('')
   const [adding, setAdding] = useState(false)
 
-  useEffect(() => { fetchTasks() }, [])
-
-  async function fetchTasks() {
-    const { data } = await supabase
-      .from('tasks')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setTasks(data)
-    setLoading(false)
-  }
+  useEffect(() => {
+    async function loadTasks() {
+      const { data } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (data) setTasks(data)
+      setLoading(false)
+    }
+    loadTasks()
+  }, [])
 
   async function addTask(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

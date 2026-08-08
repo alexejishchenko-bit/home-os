@@ -60,7 +60,13 @@ export default function App() {
         {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
         <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-logo">HomeOS</div>
+          <div className="sidebar-brand">
+            <div className="sidebar-mark" aria-hidden="true">H</div>
+            <div>
+              <div className="sidebar-logo">HomeOS</div>
+              <div className="sidebar-kicker">пространство для двоих</div>
+            </div>
+          </div>
 
           <nav className="sidebar-nav">
             {NAV.map(({ to, end, label, cls, icon }) => (
@@ -101,6 +107,8 @@ export default function App() {
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
+            <span className="topbar-logo">HomeOS</span>
+            <span className="topbar-person">{user.displayName}</span>
           </header>
 
           <main className="main">

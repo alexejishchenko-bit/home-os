@@ -62,17 +62,18 @@ export default function SportPage() {
 
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { fetchAll() }, [])
-
-  async function fetchAll() {
-    const [w, wl] = await Promise.all([
-      supabase.from('workouts').select('*').order('date', { ascending: false }),
-      supabase.from('weight_log').select('*').order('date', { ascending: false }),
-    ])
-    if (w.data) setWorkouts(w.data)
-    if (wl.data) setWeightLog(wl.data)
-    setLoading(false)
-  }
+  useEffect(() => {
+    async function loadAll() {
+      const [w, wl] = await Promise.all([
+        supabase.from('workouts').select('*').order('date', { ascending: false }),
+        supabase.from('weight_log').select('*').order('date', { ascending: false }),
+      ])
+      if (w.data) setWorkouts(w.data)
+      if (wl.data) setWeightLog(wl.data)
+      setLoading(false)
+    }
+    loadAll()
+  }, [])
 
   // Exercise form helpers
   function updateExercise(i: number, field: keyof Exercise, val: string) {
