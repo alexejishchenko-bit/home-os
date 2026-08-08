@@ -168,17 +168,10 @@ Deno.serve(async (request: Request) => {
     const geminiMetadata = telegramConfig.gemini_api_key
       ? await analyzeWithGemini(mode, sourceUrl, apifyMetadata, telegramConfig.gemini_api_key)
       : null
-
-    if (isSocialUrl(sourceUrl) && !geminiMetadata) {
-      await sendTelegram(
-        telegramConfig.telegram_bot_token,
-        chatId,
-        'Не удалось надёжно разобрать ролик. Ничего не сохранил — попробуй отправить ссылку ещё раз позже.',
-      )
-      return json({ ok: true })
-    }
-
-    const metadata = geminiMetadata ? mergeMetadata(geminiMetadata, fallbackMetadata) : fallbackMetadata
+    const analyzedMetadata = geminiMetadata ? mergeMetadata(geminiMetadata, fallbackMetadata) : fallbackMetadata
+    const metadata = hasUsefulMetadata(mode, analyzedMetadata)
+      ? analyzedMetadata
+      : linkOnlyMetadata(mode, sourceUrl)
     if (mode === 'travel') {
       const { error } = await supabase.from('places').insert({
         title: metadata.title || hostnameLabel(sourceUrl),
@@ -285,8 +278,7 @@ type LinkMetadata = {
   instructions: string | null
   prepTime: number | null
   servings: number | null
-  mediaUrl?: string | null
-  audioUrl?: string | null
+  sourceText?: string | null
   confidence?: number | null
 }
 
@@ -376,8 +368,7 @@ function metadataFromApify(item: Record<string, unknown>): LinkMetadata {
     instructions: firstText(item.recipeInstructions ?? item.instructions),
     prepTime: parseIsoMinutes(firstText(item.totalTime, item.prepTime)),
     servings: parseServings(item.recipeYield ?? item.servings),
-    mediaUrl: firstText(item.videoUrl, item.webVideoUrl),
-    audioUrl: firstText(item.audioUrl),
+    sourceText: apifyTextEvidence(item),
   }
 }
 
@@ -392,15 +383,53 @@ function mergeMetadata(primary: LinkMetadata, fallback: LinkMetadata): LinkMetad
     instructions: primary.instructions ?? fallback.instructions,
     prepTime: primary.prepTime ?? fallback.prepTime,
     servings: primary.servings ?? fallback.servings,
-    mediaUrl: primary.mediaUrl ?? fallback.mediaUrl,
-    audioUrl: primary.audioUrl ?? fallback.audioUrl,
+    sourceText: primary.sourceText ?? fallback.sourceText,
     confidence: primary.confidence ?? fallback.confidence,
   }
 }
 
-function isSocialUrl(url: string) {
-  const host = new URL(url).hostname.toLowerCase()
-  return host.includes('instagram.com') || host.includes('tiktok.com')
+function apifyTextEvidence(item: Record<string, unknown>) {
+  const values = [
+    item.caption,
+    item.text,
+    item.description,
+    item.transcript,
+    item.subtitles,
+    item.closedCaptions,
+    item.markdown,
+  ].flatMap(extractTextParts)
+  const unique = [...new Set(values.map(value => value.trim()).filter(Boolean))]
+  return unique.length ? unique.join('\n\n').slice(0, 16_000) : null
+}
+
+function extractTextParts(value: unknown): string[] {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(extractTextParts)
+  const object = recordValue(value)
+  if (!object) return []
+  return [object.text, object.content, object.transcript, object.caption].flatMap(extractTextParts)
+}
+
+function hasUsefulMetadata(mode: Mode, metadata: LinkMetadata) {
+  if (mode === 'recipe') {
+    return Boolean(metadata.ingredients?.length || metadata.instructions)
+  }
+  if (mode === 'travel') {
+    return Boolean(
+      metadata.city
+      || metadata.country
+      || (metadata.title && metadata.description && metadata.description.length >= 30)
+    )
+  }
+  return false
+}
+
+function linkOnlyMetadata(mode: 'recipe' | 'travel', url: string): LinkMetadata {
+  const source = hostnameLabel(url)
+  return {
+    ...EMPTY_METADATA,
+    title: mode === 'recipe' ? `Рецепт · ${source}` : `Место · ${source}`,
+  }
 }
 
 async function analyzeWithGemini(
@@ -410,16 +439,11 @@ async function analyzeWithGemini(
   apiKey: string,
 ): Promise<LinkMetadata | null> {
   if (mode !== 'recipe' && mode !== 'travel') return null
-  const input: Record<string, unknown>[] = []
-  if (evidence.mediaUrl) {
-    input.push({ type: 'video', uri: evidence.mediaUrl, mime_type: 'video/mp4' })
-  } else if (evidence.audioUrl) {
-    input.push({ type: 'audio', uri: evidence.audioUrl, mime_type: 'audio/mp4' })
-  }
-  input.push({
+  if (!evidence.sourceText?.trim()) return null
+  const input: Record<string, unknown>[] = [{
     type: 'text',
     text: analyzerPrompt(mode, sourceUrl, evidence),
-  })
+  }]
 
   try {
     let response = await requestGeminiAnalysis('gemini-3.6-flash', input, mode, apiKey)
@@ -462,11 +486,11 @@ function analyzerPrompt(mode: 'recipe' | 'travel', sourceUrl: string, evidence: 
     ? 'Extract a practical recipe: concise dish name, ingredients with quantities exactly as stated, ordered cooking steps, total time and servings.'
     : 'Extract a travel place: concise place or hotel name, city, country and a useful factual description.'
   return `${task}
-Analyze the caption, spoken audio, subtitles, on-screen text and visible content when media is attached.
+Analyze only the supplied text collected by Apify: caption, description, transcript, subtitles or page text.
 Use only facts supported by the source. Never invent missing names, quantities, locations, times or steps.
 Source URL: ${sourceUrl}
 Existing title: ${evidence.title ?? ''}
-Caption or page text: ${evidence.description ?? ''}`
+Apify text: ${evidence.sourceText ?? evidence.description ?? ''}`
 }
 
 function analyzerSchema(mode: 'recipe' | 'travel') {
