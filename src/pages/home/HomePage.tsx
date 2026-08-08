@@ -15,7 +15,7 @@ const CATEGORIES: { value: Category; label: string }[] = [
 const PEOPLE: { value: Person; label: string }[] = [
   { value: null, label: 'Оба' },
   { value: 'alex', label: 'Алексей' },
-  { value: 'kate', label: 'Жиня' },
+  { value: 'jinya', label: 'Жиня' },
 ]
 
 const STATUSES: { value: TaskStatus; label: string }[] = [
@@ -33,7 +33,7 @@ const PRIORITIES: { value: TaskPriority; label: string }[] = [
 
 const USER_TO_PERSON: Record<'lesha' | 'jinya', Person> = {
   lesha: 'alex',
-  jinya: 'kate',
+  jinya: 'jinya',
 }
 
 type ViewMode = 'list' | 'board'
@@ -55,6 +55,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const [priority, setPriority] = useState<TaskPriority>('normal')
   const [notes, setNotes] = useState('')
   const [linkUrl, setLinkUrl] = useState('')
+  const [remindAt, setRemindAt] = useState('')
   const [showDetails, setShowDetails] = useState(false)
   const [adding, setAdding] = useState(false)
 
@@ -83,6 +84,8 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
       priority,
       notes: notes.trim() || null,
       link_url: linkUrl.trim() || null,
+      remind_at: remindAt ? new Date(remindAt).toISOString() : null,
+      reminder_sent_at: null,
     }).select().single()
     if (data) setTasks(prev => [data, ...prev])
     setTitle('')
@@ -91,6 +94,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
     setPriority('normal')
     setNotes('')
     setLinkUrl('')
+    setRemindAt('')
     setShowDetails(false)
     setAdding(false)
   }
@@ -263,6 +267,11 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
               value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
             <input className="add-input" type="url" placeholder="Ссылка на товар, документ или переписку"
               value={linkUrl} onChange={e => setLinkUrl(e.target.value)} />
+            <label className="reminder-field">
+              <span className="task-details-label">Напомнить в Telegram</span>
+              <input className="add-input" type="datetime-local" value={remindAt}
+                onChange={e => setRemindAt(e.target.value)} />
+            </label>
           </div>
         )}
       </form>
@@ -393,6 +402,11 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: {
           {task.notes && <span className="tag">заметка</span>}
           {task.link_url && <a className="tag task-link" href={task.link_url} target="_blank"
             rel="noopener noreferrer" onClick={e => e.stopPropagation()}>ссылка ↗</a>}
+          {task.remind_at && (
+            <span className={`tag reminder-tag ${task.reminder_sent_at ? 'sent' : ''}`}>
+              {task.reminder_sent_at ? 'уведомлено' : `напомнить ${formatDateTime(task.remind_at)}`}
+            </span>
+          )}
         </div>
       </div>
       <button className="delete-btn" onClick={onDelete} aria-label={`Удалить задачу «${task.title}»`}>×</button>
@@ -414,10 +428,14 @@ function TaskEditModal({ task, onClose, onSave, onDelete }: {
   const [status, setStatus] = useState<TaskStatus>(task.status ?? 'inbox')
   const [priority, setPriority] = useState<TaskPriority>(task.priority ?? 'normal')
   const [linkUrl, setLinkUrl] = useState(task.link_url ?? '')
+  const [remindAt, setRemindAt] = useState(toDateTimeLocal(task.remind_at))
 
   function handleSave() {
+    const nextReminder = remindAt ? new Date(remindAt).toISOString() : null
     onSave({ title: title.trim(), category, assigned_to: assignedTo, due_date: dueDate || null,
-      status, priority, notes: notes.trim() || null, link_url: linkUrl.trim() || null })
+      status, priority, notes: notes.trim() || null, link_url: linkUrl.trim() || null,
+      remind_at: nextReminder,
+      reminder_sent_at: nextReminder === task.remind_at ? task.reminder_sent_at : null })
     onClose()
   }
 
@@ -488,6 +506,10 @@ function TaskEditModal({ task, onClose, onSave, onDelete }: {
           <input className="add-input" type="url" value={linkUrl}
             onChange={e => setLinkUrl(e.target.value)}
             placeholder="https://..." />
+
+          <div className="modal-label">Напомнить в Telegram</div>
+          <input className="add-input" type="datetime-local" value={remindAt}
+            onChange={e => setRemindAt(e.target.value)} />
         </div>
 
         <div className="modal-footer">
@@ -509,4 +531,17 @@ function TaskEditModal({ task, onClose, onSave, onDelete }: {
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+function formatDateTime(dateStr: string) {
+  return new Date(dateStr).toLocaleString('ru-RU', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function toDateTimeLocal(value: string | null) {
+  if (!value) return ''
+  const date = new Date(value)
+  const offset = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
 }

@@ -3,7 +3,7 @@ create table tasks (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   category text not null default 'task', -- task | cleaning | shopping | bill
-  assigned_to text, -- 'alex' | 'kate' | null (оба)
+  assigned_to text, -- 'alex' | 'jinya' | null (оба)
   due_date date,
   done boolean not null default false,
   done_at timestamptz,
@@ -11,13 +11,15 @@ create table tasks (
   status text not null default 'inbox' check (status in ('inbox', 'planned', 'in_progress', 'waiting')),
   priority text not null default 'normal' check (priority in ('normal', 'high', 'urgent')),
   link_url text,
+  remind_at timestamptz,
+  reminder_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 -- Health events (консультации, процедуры)
 create table health_events (
   id uuid primary key default gen_random_uuid(),
-  person text not null, -- 'alex' | 'kate'
+  person text not null, -- 'alex' | 'jinya'
   type text not null, -- consultation | procedure | aligner | research
   title text not null,
   date date,

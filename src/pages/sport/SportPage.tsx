@@ -13,10 +13,10 @@ const WORKOUT_TYPES = [
 
 const PEOPLE = [
   { value: 'alex', label: 'Алексей' },
-  { value: 'kate', label: 'Жиня' },
+  { value: 'jinya', label: 'Жиня' },
 ]
 
-type PersonTab = 'alex' | 'kate'
+type PersonTab = 'alex' | 'jinya'
 type MainTab = 'workouts' | 'weight' | 'progress'
 
 interface Exercise {

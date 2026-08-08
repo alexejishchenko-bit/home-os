@@ -12,10 +12,10 @@ const TYPES = [
 
 const PEOPLE = [
   { value: 'alex', label: 'Алексей' },
-  { value: 'kate', label: 'Жиня' },
+  { value: 'jinya', label: 'Жиня' },
 ]
 
-type Tab = 'alex' | 'kate'
+type Tab = 'alex' | 'jinya'
 
 export default function HealthPage() {
   const [events, setEvents] = useState<HealthEvent[]>([])
@@ -24,7 +24,7 @@ export default function HealthPage() {
   const [showForm, setShowForm] = useState(false)
 
   // Form
-  const [person, setPerson] = useState<'alex' | 'kate'>('alex')
+  const [person, setPerson] = useState<'alex' | 'jinya'>('alex')
   const [type, setType] = useState('consultation')
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
@@ -91,7 +91,7 @@ export default function HealthPage() {
               {PEOPLE.map(p => (
                 <button key={p.value} type="button"
                   className={`seg-btn ${person === p.value ? 'active' : ''}`}
-                  onClick={() => setPerson(p.value as 'alex' | 'kate')}>
+                  onClick={() => setPerson(p.value as 'alex' | 'jinya')}>
                   {p.label}
                 </button>
               ))}

@@ -1,5 +1,5 @@
 export type Category = 'task' | 'cleaning' | 'shopping' | 'bill'
-export type Person = 'alex' | 'kate' | null
+export type Person = 'alex' | 'jinya' | null
 export type TaskStatus = 'inbox' | 'planned' | 'in_progress' | 'waiting'
 export type TaskPriority = 'normal' | 'high' | 'urgent'
 
@@ -15,6 +15,8 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   link_url: string | null
+  remind_at: string | null
+  reminder_sent_at: string | null
   created_at: string
 }
 

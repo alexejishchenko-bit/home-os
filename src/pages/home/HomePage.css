@@ -144,6 +144,13 @@
 }
 
 .task-details-panel > .add-input { grid-column: 1 / -1; }
+.reminder-field {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.reminder-field .add-input { max-width: 280px; color-scheme: dark; }
 .task-details-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .task-details-label {
   color: var(--text-faint);
@@ -300,6 +307,8 @@
 .tag-priority.priority-urgent { color: var(--danger) !important; border-color: rgba(255,107,107,.28) !important; }
 .task-link { text-decoration: none; color: var(--accent-home) !important; }
 .task-link:hover { border-color: var(--accent-home) !important; }
+.reminder-tag { color: var(--accent-recipes) !important; border-color: rgba(217,121,167,.28) !important; }
+.reminder-tag.sent { color: var(--success) !important; border-color: rgba(84,201,145,.24) !important; }
 
 .task-item .delete-btn { opacity: 0; }
 .task-item:hover .delete-btn { opacity: 1; }

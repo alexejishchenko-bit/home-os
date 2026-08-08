@@ -13,7 +13,7 @@ const CATEGORY_COLOR: Record<Task['category'], string> = {
   bill: 'var(--accent-health)',
 }
 
-const PERSON_INITIAL: Record<string, string> = { alex: 'А', kate: 'Ж' }
+const PERSON_INITIAL: Record<string, string> = { alex: 'А', jinya: 'Ж' }
 
 interface Props {
   tasks: Task[]
