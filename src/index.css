@@ -5,6 +5,8 @@
 }
 
 :root {
+  font-family: 'Inter Variable', Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
   --bg: #090b0f;
   --surface: #111419;
   --surface-raised: #15191f;
@@ -32,7 +34,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.55;
   min-height: 100dvh;
