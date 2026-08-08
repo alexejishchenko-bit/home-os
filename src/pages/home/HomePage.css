@@ -335,7 +335,12 @@
 }
 
 .assignee-avatar.alex { background: linear-gradient(145deg, #4f7bc8, #31548e); }
-.assignee-avatar.jinya { background: linear-gradient(145deg, #b86491, #804367); }
+.assignee-avatar.jinya {
+  background-color: #804367;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .assignee-pair .assignee-avatar + .assignee-avatar { margin-left: -9px; }
 
 .task-item .delete-btn { opacity: 0; }
