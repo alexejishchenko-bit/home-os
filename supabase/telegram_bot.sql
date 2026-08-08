@@ -33,7 +33,8 @@ as $$
     'telegram_webhook_secret',
     'telegram_chat_alex',
     'telegram_chat_jinya',
-    'apify_api_token'
+    'apify_api_token',
+    'gemini_api_key'
   );
 $$;
 

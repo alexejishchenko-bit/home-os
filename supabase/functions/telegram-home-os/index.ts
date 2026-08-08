@@ -9,6 +9,7 @@ type TelegramConfig = {
   telegram_chat_alex: string
   telegram_chat_jinya: string
   apify_api_token?: string
+  gemini_api_key?: string
 }
 
 type TelegramUpdate = {
@@ -163,7 +164,21 @@ Deno.serve(async (request: Request) => {
 
     const apifyMetadata = await fetchApifyMetadata(sourceUrl, telegramConfig.apify_api_token)
     const directMetadata = await fetchMetadata(sourceUrl)
-    const metadata = mergeMetadata(apifyMetadata, directMetadata)
+    const fallbackMetadata = mergeMetadata(apifyMetadata, directMetadata)
+    const geminiMetadata = telegramConfig.gemini_api_key
+      ? await analyzeWithGemini(mode, sourceUrl, apifyMetadata, telegramConfig.gemini_api_key)
+      : null
+
+    if (isSocialUrl(sourceUrl) && !geminiMetadata) {
+      await sendTelegram(
+        telegramConfig.telegram_bot_token,
+        chatId,
+        'Не удалось надёжно разобрать ролик. Ничего не сохранил — попробуй отправить ссылку ещё раз позже.',
+      )
+      return json({ ok: true })
+    }
+
+    const metadata = geminiMetadata ? mergeMetadata(geminiMetadata, fallbackMetadata) : fallbackMetadata
     if (mode === 'travel') {
       const { error } = await supabase.from('places').insert({
         title: metadata.title || hostnameLabel(sourceUrl),
@@ -270,6 +285,9 @@ type LinkMetadata = {
   instructions: string | null
   prepTime: number | null
   servings: number | null
+  mediaUrl?: string | null
+  audioUrl?: string | null
+  confidence?: number | null
 }
 
 const EMPTY_METADATA: LinkMetadata = {
@@ -358,6 +376,8 @@ function metadataFromApify(item: Record<string, unknown>): LinkMetadata {
     instructions: firstText(item.recipeInstructions ?? item.instructions),
     prepTime: parseIsoMinutes(firstText(item.totalTime, item.prepTime)),
     servings: parseServings(item.recipeYield ?? item.servings),
+    mediaUrl: firstText(item.videoUrl, item.webVideoUrl),
+    audioUrl: firstText(item.audioUrl),
   }
 }
 
@@ -372,6 +392,134 @@ function mergeMetadata(primary: LinkMetadata, fallback: LinkMetadata): LinkMetad
     instructions: primary.instructions ?? fallback.instructions,
     prepTime: primary.prepTime ?? fallback.prepTime,
     servings: primary.servings ?? fallback.servings,
+    mediaUrl: primary.mediaUrl ?? fallback.mediaUrl,
+    audioUrl: primary.audioUrl ?? fallback.audioUrl,
+    confidence: primary.confidence ?? fallback.confidence,
+  }
+}
+
+function isSocialUrl(url: string) {
+  const host = new URL(url).hostname.toLowerCase()
+  return host.includes('instagram.com') || host.includes('tiktok.com')
+}
+
+async function analyzeWithGemini(
+  mode: Mode,
+  sourceUrl: string,
+  evidence: LinkMetadata,
+  apiKey: string,
+): Promise<LinkMetadata | null> {
+  if (mode !== 'recipe' && mode !== 'travel') return null
+  const input: Record<string, unknown>[] = []
+  if (evidence.mediaUrl) {
+    input.push({ type: 'video', uri: evidence.mediaUrl, mime_type: 'video/mp4' })
+  } else if (evidence.audioUrl) {
+    input.push({ type: 'audio', uri: evidence.audioUrl, mime_type: 'audio/mp4' })
+  }
+  input.push({
+    type: 'text',
+    text: analyzerPrompt(mode, sourceUrl, evidence),
+  })
+
+  try {
+    let response = await requestGeminiAnalysis('gemini-3.6-flash', input, mode, apiKey)
+    if (response.status === 429) {
+      response = await requestGeminiAnalysis('gemini-3.5-flash', input, mode, apiKey)
+    }
+    if (!response.ok) {
+      console.error('Gemini analysis failed', response.status)
+      return null
+    }
+    const body = await response.json() as Record<string, unknown>
+    const text = interactionOutputText(body)
+    if (!text) return null
+    return metadataFromGemini(JSON.parse(text) as Record<string, unknown>, mode)
+  } catch (error) {
+    console.error('Gemini analysis failed', error instanceof Error ? error.message : String(error))
+    return null
+  }
+}
+
+function requestGeminiAnalysis(
+  model: string,
+  input: Record<string, unknown>[],
+  mode: 'recipe' | 'travel',
+  apiKey: string,
+) {
+  return fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+    method: 'POST',
+    signal: AbortSignal.timeout(120_000),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({ model, input, response_format: analyzerSchema(mode) }),
+  })
+}
+
+function analyzerPrompt(mode: 'recipe' | 'travel', sourceUrl: string, evidence: LinkMetadata) {
+  const task = mode === 'recipe'
+    ? 'Extract a practical recipe: concise dish name, ingredients with quantities exactly as stated, ordered cooking steps, total time and servings.'
+    : 'Extract a travel place: concise place or hotel name, city, country and a useful factual description.'
+  return `${task}
+Analyze the caption, spoken audio, subtitles, on-screen text and visible content when media is attached.
+Use only facts supported by the source. Never invent missing names, quantities, locations, times or steps.
+Source URL: ${sourceUrl}
+Existing title: ${evidence.title ?? ''}
+Caption or page text: ${evidence.description ?? ''}`
+}
+
+function analyzerSchema(mode: 'recipe' | 'travel') {
+  const common = {
+    title: { type: 'string', description: 'A short normalized Russian title.' },
+    description: { type: ['string', 'null'] },
+    confidence: { type: 'number', minimum: 0, maximum: 1 },
+  }
+  const properties = mode === 'recipe' ? {
+    ...common,
+    ingredients: { type: 'array', items: { type: 'string' } },
+    instructions: { type: 'array', items: { type: 'string' } },
+    prep_time_min: { type: ['integer', 'null'] },
+    servings: { type: ['integer', 'null'] },
+  } : {
+    ...common,
+    city: { type: ['string', 'null'] },
+    country: { type: ['string', 'null'] },
+  }
+  return {
+    type: 'object',
+    properties,
+    required: Object.keys(properties),
+    additionalProperties: false,
+  }
+}
+
+function interactionOutputText(body: Record<string, unknown>) {
+  const steps = Array.isArray(body.steps) ? body.steps : []
+  for (const stepValue of steps) {
+    const step = recordValue(stepValue)
+    if (step?.type !== 'model_output' || !Array.isArray(step.content)) continue
+    for (const partValue of step.content) {
+      const part = recordValue(partValue)
+      if (part?.type === 'text' && typeof part.text === 'string') return part.text
+    }
+  }
+  return null
+}
+
+function metadataFromGemini(item: Record<string, unknown>, mode: 'recipe' | 'travel'): LinkMetadata {
+  const instructions = stringArray(item.instructions)
+  return {
+    ...EMPTY_METADATA,
+    title: firstText(item.title),
+    description: firstText(item.description),
+    city: mode === 'travel' ? firstText(item.city) : null,
+    country: mode === 'travel' ? firstText(item.country) : null,
+    ingredients: mode === 'recipe' ? stringArray(item.ingredients) : null,
+    instructions: mode === 'recipe' && instructions?.length ? instructions.join('\n') : null,
+    prepTime: mode === 'recipe' && typeof item.prep_time_min === 'number' ? item.prep_time_min : null,
+    servings: mode === 'recipe' && typeof item.servings === 'number' ? item.servings : null,
+    confidence: typeof item.confidence === 'number' ? item.confidence : null,
   }
 }
 
