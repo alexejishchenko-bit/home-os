@@ -15,6 +15,7 @@
   --accent-health: #f87171;
   --accent-sport: #60a5fa;
   --accent-travel: #fbbf24;
+  --accent-recipes: #f472b6;
   --radius: 10px;
 }
 
@@ -183,10 +184,11 @@ textarea.add-input { resize: vertical; min-height: 60px; }
   letter-spacing: -0.5px;
 }
 
-.page-title.home   { color: var(--accent-home); }
-.page-title.health { color: var(--accent-health); }
-.page-title.sport  { color: var(--accent-sport); }
-.page-title.travel { color: var(--accent-travel); }
+.page-title.home    { color: var(--accent-home); }
+.page-title.health  { color: var(--accent-health); }
+.page-title.sport   { color: var(--accent-sport); }
+.page-title.travel  { color: var(--accent-travel); }
+.page-title.recipes { color: var(--accent-recipes); }
 
 .page-stub { color: var(--text-muted); font-size: 14px; }
 

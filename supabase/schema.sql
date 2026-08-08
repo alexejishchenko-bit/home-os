@@ -73,6 +73,21 @@ create table documents (
   created_at timestamptz not null default now()
 );
 
+-- Recipes (понравившиеся рецепты)
+create table recipes (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  ingredients text[], -- одна строка = один ингредиент
+  instructions text, -- шаги, разделены переносами строк
+  prep_time_min int,
+  servings int,
+  source_url text,
+  tags text[],
+  image_url text,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
 -- RLS: открываем всё без авторизации (семейный инструмент)
 alter table tasks enable row level security;
 alter table health_events enable row level security;
@@ -80,6 +95,7 @@ alter table workouts enable row level security;
 alter table weight_log enable row level security;
 alter table places enable row level security;
 alter table documents enable row level security;
+alter table recipes enable row level security;
 
 create policy "public access" on tasks for all using (true) with check (true);
 create policy "public access" on health_events for all using (true) with check (true);
@@ -87,3 +103,4 @@ create policy "public access" on workouts for all using (true) with check (true)
 create policy "public access" on weight_log for all using (true) with check (true);
 create policy "public access" on places for all using (true) with check (true);
 create policy "public access" on documents for all using (true) with check (true);
+create policy "public access" on recipes for all using (true) with check (true);

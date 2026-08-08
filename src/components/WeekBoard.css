@@ -1,0 +1,131 @@
+.week-board {
+  margin-bottom: 20px;
+}
+
+.wb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.wb-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.wb-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 140px;
+}
+
+.wb-col.today {
+  border-color: var(--accent-home);
+}
+
+.wb-col-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wb-day-name {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.wb-day-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wb-col.today .wb-day-num { color: var(--accent-home); }
+
+.wb-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.wb-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.wb-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 5px 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wb-card:hover { background: var(--border); }
+.wb-card.done { opacity: 0.45; }
+
+.wb-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 2px solid var(--border);
+  background: transparent;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wb-check-icon {
+  font-size: 9px;
+  color: #000;
+  font-weight: 700;
+}
+
+.wb-card-title {
+  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-card.done .wb-card-title { text-decoration: line-through; }
+
+.wb-person {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+  .wb-grid {
+    grid-template-columns: 1fr;
+  }
+}

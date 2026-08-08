@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Task } from '../lib/types'
+import { groupTasksByDate } from '../lib/dateUtils'
 import './Calendar.css'
 
 const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
@@ -21,14 +22,7 @@ export default function Calendar({ tasks, onDayClick, selectedDate }: Props) {
   const startOffset = (firstDay.getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
-  // Map date string → tasks
-  const tasksByDate: Record<string, Task[]> = {}
-  tasks.forEach(t => {
-    if (t.due_date) {
-      if (!tasksByDate[t.due_date]) tasksByDate[t.due_date] = []
-      tasksByDate[t.due_date].push(t)
-    }
-  })
+  const tasksByDate = groupTasksByDate(tasks)
 
   const todayStr = today.toISOString().slice(0, 10)
 

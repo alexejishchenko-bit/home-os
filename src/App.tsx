@@ -7,6 +7,7 @@ import HomePage from './pages/home/HomePage'
 import HealthPage from './pages/health/HealthPage'
 import SportPage from './pages/sport/SportPage'
 import TravelPage from './pages/travel/TravelPage'
+import RecipesPage from './pages/recipes/RecipesPage'
 import './App.css'
 
 const NAV = [
@@ -31,6 +32,13 @@ const NAV = [
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <circle cx="12" cy="12" r="10"/>
       <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+  )},
+  { to: '/recipes', label: 'Рецепты', cls: 'recipes', icon: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M8 3v7a4 4 0 0 0 8 0V3"/>
+      <path d="M12 10v11"/>
+      <path d="M18 3c-1.5 2-1.5 5 0 8"/>
     </svg>
   )},
 ]
@@ -101,6 +109,7 @@ export default function App() {
               <Route path="/health" element={<HealthPage />} />
               <Route path="/sport" element={<SportPage />} />
               <Route path="/travel" element={<TravelPage />} />
+              <Route path="/recipes" element={<RecipesPage />} />
             </Routes>
           </main>
         </div>

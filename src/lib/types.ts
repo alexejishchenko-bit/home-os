@@ -57,3 +57,17 @@ export interface Place {
   image_url: string | null
   created_at: string
 }
+
+export interface Recipe {
+  id: string
+  title: string
+  ingredients: string[] | null
+  instructions: string | null
+  prep_time_min: number | null
+  servings: number | null
+  source_url: string | null
+  tags: string[] | null
+  image_url: string | null
+  notes: string | null
+  created_at: string
+}

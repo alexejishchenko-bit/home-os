@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Task, Category, Person } from '../../lib/types'
 import Calendar from '../../components/Calendar'
+import WeekBoard from '../../components/WeekBoard'
 import './HomePage.css'
 
 const CATEGORIES: { value: Category; label: string }[] = [
@@ -22,7 +23,7 @@ const USER_TO_PERSON: Record<'lesha' | 'jinya', Person> = {
   jinya: 'kate',
 }
 
-type ViewMode = 'list' | 'calendar'
+type ViewMode = 'list' | 'calendar' | 'board'
 
 export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jinya' }) {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -137,6 +138,17 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
             </svg>
             Календарь
           </button>
+          <button
+            className={`view-btn ${view === 'board' ? 'active' : ''}`}
+            onClick={() => { setView('board'); setSelectedDate(null) }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="4" height="16" rx="1"/>
+              <rect x="10" y="4" width="4" height="10" rx="1"/>
+              <rect x="17" y="4" width="4" height="13" rx="1"/>
+            </svg>
+            Борд
+          </button>
         </div>
       </div>
 
@@ -184,6 +196,15 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
           tasks={tasks}
           selectedDate={selectedDate}
           onDayClick={date => setSelectedDate(date)}
+        />
+      )}
+
+      {/* Week board view */}
+      {view === 'board' && (
+        <WeekBoard
+          tasks={tasks}
+          onToggle={toggleDone}
+          onTaskClick={setEditingTask}
         />
       )}
 

@@ -60,10 +60,11 @@
   color: var(--text);
 }
 
-.sidebar-link.active.home   { color: var(--accent-home); }
-.sidebar-link.active.health { color: var(--accent-health); }
-.sidebar-link.active.sport  { color: var(--accent-sport); }
-.sidebar-link.active.travel { color: var(--accent-travel); }
+.sidebar-link.active.home    { color: var(--accent-home); }
+.sidebar-link.active.health  { color: var(--accent-health); }
+.sidebar-link.active.sport   { color: var(--accent-sport); }
+.sidebar-link.active.travel  { color: var(--accent-travel); }
+.sidebar-link.active.recipes { color: var(--accent-recipes); }
 
 .sidebar-icon {
   width: 18px;
@@ -181,10 +182,11 @@
   margin-bottom: 8px;
 }
 
-.page-title.home   { color: var(--accent-home); }
-.page-title.health { color: var(--accent-health); }
-.page-title.sport  { color: var(--accent-sport); }
-.page-title.travel { color: var(--accent-travel); }
+.page-title.home    { color: var(--accent-home); }
+.page-title.health  { color: var(--accent-health); }
+.page-title.sport   { color: var(--accent-sport); }
+.page-title.travel  { color: var(--accent-travel); }
+.page-title.recipes { color: var(--accent-recipes); }
 
 .page-stub {
   color: var(--text-muted);
