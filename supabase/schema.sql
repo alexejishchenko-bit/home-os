@@ -8,6 +8,9 @@ create table tasks (
   done boolean not null default false,
   done_at timestamptz,
   notes text,
+  status text not null default 'inbox' check (status in ('inbox', 'planned', 'in_progress', 'waiting')),
+  priority text not null default 'normal' check (priority in ('normal', 'high', 'urgent')),
+  link_url text,
   created_at timestamptz not null default now()
 );
 

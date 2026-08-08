@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { Task, Category, Person } from '../../lib/types'
+import type { Task, Category, Person, TaskStatus, TaskPriority } from '../../lib/types'
 import WeekBoard from '../../components/WeekBoard'
 import { isoDate } from '../../lib/dateUtils'
 import './HomePage.css'
@@ -16,6 +16,19 @@ const PEOPLE: { value: Person; label: string }[] = [
   { value: null, label: 'Оба' },
   { value: 'alex', label: 'Алексей' },
   { value: 'kate', label: 'Жиня' },
+]
+
+const STATUSES: { value: TaskStatus; label: string }[] = [
+  { value: 'inbox', label: 'Входящие' },
+  { value: 'planned', label: 'Запланировано' },
+  { value: 'in_progress', label: 'В работе' },
+  { value: 'waiting', label: 'Ждём' },
+]
+
+const PRIORITIES: { value: TaskPriority; label: string }[] = [
+  { value: 'normal', label: 'Обычный' },
+  { value: 'high', label: 'Важный' },
+  { value: 'urgent', label: 'Срочный' },
 ]
 
 const USER_TO_PERSON: Record<'lesha' | 'jinya', Person> = {
@@ -38,6 +51,11 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const [category, setCategory] = useState<Category>('task')
   const [assignedTo, setAssignedTo] = useState<Person>(USER_TO_PERSON[currentUser])
   const [dueDate, setDueDate] = useState('')
+  const [status, setStatus] = useState<TaskStatus>('inbox')
+  const [priority, setPriority] = useState<TaskPriority>('normal')
+  const [notes, setNotes] = useState('')
+  const [linkUrl, setLinkUrl] = useState('')
+  const [showDetails, setShowDetails] = useState(false)
   const [adding, setAdding] = useState(false)
 
   useEffect(() => {
@@ -61,10 +79,19 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
       category,
       assigned_to: assignedTo,
       due_date: dueDate || null,
+      status,
+      priority,
+      notes: notes.trim() || null,
+      link_url: linkUrl.trim() || null,
     }).select().single()
     if (data) setTasks(prev => [data, ...prev])
     setTitle('')
     setDueDate('')
+    setStatus('inbox')
+    setPriority('normal')
+    setNotes('')
+    setLinkUrl('')
+    setShowDetails(false)
     setAdding(false)
   }
 
@@ -205,7 +232,39 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
           </div>
           <input type="date" className="date-input" value={dueDate}
             onChange={e => setDueDate(e.target.value)} />
+          <button type="button" className={`details-toggle ${showDetails ? 'active' : ''}`}
+            onClick={() => setShowDetails(value => !value)} aria-expanded={showDetails}>
+            {showDetails ? 'Скрыть детали' : 'Подробнее'}
+          </button>
         </div>
+        {showDetails && (
+          <div className="task-details-panel">
+            <div className="task-details-field">
+              <span className="task-details-label">Статус</span>
+              <div className="seg-group">
+                {STATUSES.map(item => (
+                  <button key={item.value} type="button"
+                    className={`seg-btn ${status === item.value ? 'active' : ''}`}
+                    onClick={() => setStatus(item.value)}>{item.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="task-details-field">
+              <span className="task-details-label">Приоритет</span>
+              <div className="seg-group">
+                {PRIORITIES.map(item => (
+                  <button key={item.value} type="button"
+                    className={`seg-btn priority-${item.value} ${priority === item.value ? 'active' : ''}`}
+                    onClick={() => setPriority(item.value)}>{item.label}</button>
+                ))}
+              </div>
+            </div>
+            <textarea className="add-input textarea" placeholder="Заметка к задаче"
+              value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
+            <input className="add-input" type="url" placeholder="Ссылка на товар, документ или переписку"
+              value={linkUrl} onChange={e => setLinkUrl(e.target.value)} />
+          </div>
+        )}
       </form>
 
       {/* Week board view */}
@@ -309,6 +368,8 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: {
   const isOverdue = !task.done && task.due_date && task.due_date < isoDate(new Date())
   const cat = CATEGORIES.find(c => c.value === task.category)
   const person = PEOPLE.find(p => p.value === task.assigned_to)
+  const taskStatus = STATUSES.find(s => s.value === task.status)
+  const taskPriority = PRIORITIES.find(p => p.value === task.priority)
 
   return (
     <li className={`task-item ${task.done ? 'done' : ''} ${isOverdue ? 'overdue' : ''}`}>
@@ -322,10 +383,16 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: {
         <div className="task-meta">
           <span className="tag">{cat?.label}</span>
           {person?.label && <span className="tag">{person.label}</span>}
+          {task.status && task.status !== 'inbox' && <span className="tag tag-status">{taskStatus?.label}</span>}
+          {task.priority && task.priority !== 'normal' && (
+            <span className={`tag tag-priority priority-${task.priority}`}>{taskPriority?.label}</span>
+          )}
           {task.due_date && (
             <span className={`tag ${isOverdue ? 'tag-red' : ''}`}>{formatDate(task.due_date)}</span>
           )}
           {task.notes && <span className="tag">заметка</span>}
+          {task.link_url && <a className="tag task-link" href={task.link_url} target="_blank"
+            rel="noopener noreferrer" onClick={e => e.stopPropagation()}>ссылка ↗</a>}
         </div>
       </div>
       <button className="delete-btn" onClick={onDelete} aria-label={`Удалить задачу «${task.title}»`}>×</button>
@@ -344,9 +411,13 @@ function TaskEditModal({ task, onClose, onSave, onDelete }: {
   const [assignedTo, setAssignedTo] = useState<Person>(task.assigned_to)
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
   const [notes, setNotes] = useState(task.notes ?? '')
+  const [status, setStatus] = useState<TaskStatus>(task.status ?? 'inbox')
+  const [priority, setPriority] = useState<TaskPriority>(task.priority ?? 'normal')
+  const [linkUrl, setLinkUrl] = useState(task.link_url ?? '')
 
   function handleSave() {
-    onSave({ title: title.trim(), category, assigned_to: assignedTo, due_date: dueDate || null, notes: notes || null })
+    onSave({ title: title.trim(), category, assigned_to: assignedTo, due_date: dueDate || null,
+      status, priority, notes: notes.trim() || null, link_url: linkUrl.trim() || null })
     onClose()
   }
 
@@ -390,10 +461,33 @@ function TaskEditModal({ task, onClose, onSave, onDelete }: {
             onChange={e => setDueDate(e.target.value)}
             style={{ colorScheme: 'dark' }} />
 
+          <div className="modal-label">Статус</div>
+          <div className="seg-group">
+            {STATUSES.map(item => (
+              <button key={item.value} type="button"
+                className={`seg-btn ${status === item.value ? 'active' : ''}`}
+                onClick={() => setStatus(item.value)}>{item.label}</button>
+            ))}
+          </div>
+
+          <div className="modal-label">Приоритет</div>
+          <div className="seg-group">
+            {PRIORITIES.map(item => (
+              <button key={item.value} type="button"
+                className={`seg-btn priority-${item.value} ${priority === item.value ? 'active' : ''}`}
+                onClick={() => setPriority(item.value)}>{item.label}</button>
+            ))}
+          </div>
+
           <div className="modal-label">Заметки</div>
           <textarea className="add-input textarea" value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="Дополнительные детали..." rows={3} />
+
+          <div className="modal-label">Ссылка</div>
+          <input className="add-input" type="url" value={linkUrl}
+            onChange={e => setLinkUrl(e.target.value)}
+            placeholder="https://..." />
         </div>
 
         <div className="modal-footer">

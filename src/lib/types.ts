@@ -1,5 +1,7 @@
 export type Category = 'task' | 'cleaning' | 'shopping' | 'bill'
 export type Person = 'alex' | 'kate' | null
+export type TaskStatus = 'inbox' | 'planned' | 'in_progress' | 'waiting'
+export type TaskPriority = 'normal' | 'high' | 'urgent'
 
 export interface Task {
   id: string
@@ -10,6 +12,9 @@ export interface Task {
   done: boolean
   done_at: string | null
   notes: string | null
+  status: TaskStatus
+  priority: TaskPriority
+  link_url: string | null
   created_at: string
 }
 
