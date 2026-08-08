@@ -8,6 +8,7 @@ import HealthPage from './pages/health/HealthPage'
 import SportPage from './pages/sport/SportPage'
 import TravelPage from './pages/travel/TravelPage'
 import RecipesPage from './pages/recipes/RecipesPage'
+import PersonAvatar from './components/PersonAvatar'
 import './App.css'
 
 const NAV = [
@@ -106,7 +107,7 @@ export default function App() {
           </nav>
 
           <div className="sidebar-user">
-            <div className="sidebar-avatar">{user.displayName[0]}</div>
+            <PersonAvatar person={user.username === 'lesha' ? 'alex' : 'jinya'} className="sidebar-avatar" />
             <div className="sidebar-user-info">
               <span className="sidebar-username">{user.displayName}</span>
               <span className="sidebar-user-status">Личное пространство</span>

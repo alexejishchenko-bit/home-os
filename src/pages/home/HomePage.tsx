@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import type { Task, Category, Person, TaskStatus, TaskPriority } from '../../lib/types'
 import WeekBoard from '../../components/WeekBoard'
 import DateTimePicker from '../../components/DateTimePicker'
+import PersonAvatar from '../../components/PersonAvatar'
 import { isoDate } from '../../lib/dateUtils'
 import './HomePage.css'
 
@@ -418,15 +419,15 @@ function AssigneeAvatar({ person, label }: { person: Person; label: string }) {
   if (!person) {
     return (
       <span className="assignee assignee-pair" aria-label="Ответственные: Алексей и Жиня" title="Алексей и Жиня">
-        <span className="assignee-avatar alex">А</span>
-        <span className="assignee-avatar jinya">Ж</span>
+        <PersonAvatar person="alex" className="assignee-avatar" />
+        <PersonAvatar person="jinya" className="assignee-avatar" />
       </span>
     )
   }
 
   return (
     <span className="assignee" aria-label={`Ответственный: ${label}`} title={label}>
-      <span className={`assignee-avatar ${person}`}>{person === 'alex' ? 'А' : 'Ж'}</span>
+      <PersonAvatar person={person} className="assignee-avatar" />
     </span>
   )
 }

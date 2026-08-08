@@ -1,4 +1,4 @@
--- Private cover images for recipes and travel places.
+-- Private images for recipes, travel places, and household avatars.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'covers',
@@ -27,7 +27,7 @@ to authenticated using (
 create policy "family covers insert" on storage.objects for insert
 to authenticated with check (
   bucket_id = 'covers'
-  and (storage.foldername(name))[1] in ('recipes', 'travel')
+  and (storage.foldername(name))[1] in ('recipes', 'travel', 'avatars')
   and lower(storage.extension(name)) in ('jpg', 'jpeg', 'png', 'webp')
   and exists (
     select 1 from public.household_members

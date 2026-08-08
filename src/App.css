@@ -153,6 +153,11 @@
   color: var(--text);
 }
 
+.sidebar-avatar.person-avatar {
+  background-size: cover;
+  background-position: 50% 32%;
+}
+
 .sidebar-user-info {
   flex: 1;
   min-width: 0;
