@@ -64,6 +64,12 @@ export interface Place {
   links: { url: string; type: string; title?: string }[] | null
   notes: string | null
   image_url: string | null
+  photos: string[] | null
+  latitude: number | null
+  longitude: number | null
+  distance_km: number | null
+  drive_minutes: number | null
+  enriched_at: string | null
   created_at: string
 }
 

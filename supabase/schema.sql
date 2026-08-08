@@ -64,6 +64,12 @@ create table places (
   links jsonb, -- [{url, type: 'reel'|'article'|'other', title}]
   notes text,
   image_url text,
+  photos text[],
+  latitude double precision,
+  longitude double precision,
+  distance_km numeric(7,1),
+  drive_minutes integer,
+  enriched_at timestamptz,
   created_at timestamptz not null default now()
 );
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Place } from '../../lib/types'
-import { uploadCover } from '../../lib/covers'
+import { resolveCoverUrl, uploadCover } from '../../lib/covers'
 import CoverImage from '../../components/CoverImage'
 import CoverPicker from '../../components/CoverPicker'
 import './TravelPage.css'
@@ -34,6 +34,8 @@ export default function TravelPage() {
   const [pImageFile, setPImageFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [coverUploadingId, setCoverUploadingId] = useState<string | null>(null)
+  const [enrichingId, setEnrichingId] = useState<string | null>(null)
+  const [openPlace, setOpenPlace] = useState<Place | null>(null)
 
   useEffect(() => {
     async function loadPlaces() {
@@ -98,12 +100,38 @@ export default function TravelPage() {
       const imageUrl = await uploadCover(file, 'travel')
       const { error } = await supabase.from('places').update({ image_url: imageUrl }).eq('id', place.id)
       if (error) throw error
-      setPlaces(prev => prev.map(p => p.id === place.id ? { ...p, image_url: imageUrl } : p))
+      replacePlace({ ...place, image_url: imageUrl })
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Не удалось обновить обложку')
     } finally {
       setCoverUploadingId(null)
     }
+  }
+
+  function replacePlace(updated: Place) {
+    setPlaces(prev => prev.map(place => place.id === updated.id ? updated : place))
+    setOpenPlace(current => current?.id === updated.id ? updated : current)
+  }
+
+  async function enrichPlace(place: Place) {
+    if (enrichingId) return
+    setEnrichingId(place.id)
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-place', {
+        body: { placeId: place.id },
+      })
+      if (error) throw error
+      if (data?.place) replacePlace(data.place as Place)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Не удалось найти фото и маршрут')
+    } finally {
+      setEnrichingId(null)
+    }
+  }
+
+  function openDetails(place: Place) {
+    setOpenPlace(place)
+    if (!place.enriched_at) void enrichPlace(place)
   }
 
   const filtered = places.filter(p =>
@@ -200,6 +228,7 @@ export default function TravelPage() {
             <div className="places-grid">
               {filtered.map(place => (
                 <PlaceCard key={place.id} place={place}
+                  onOpen={() => openDetails(place)}
                   onStatusChange={(s) => updateStatus(place, s)}
                   onCoverChange={(file) => updateCover(place, file)}
                   coverUploading={coverUploadingId === place.id}
@@ -211,20 +240,28 @@ export default function TravelPage() {
       )}
 
       {tab === 'docs' && <DocsPlaceholder />}
+
+      {openPlace && (
+        <PlaceDetail place={openPlace} enriching={enrichingId === openPlace.id}
+          onClose={() => setOpenPlace(null)} onRefresh={() => enrichPlace(openPlace)} />
+      )}
     </div>
   )
 }
 
-function PlaceCard({ place, onStatusChange, onCoverChange, coverUploading, onDelete }: {
+function PlaceCard({ place, onOpen, onStatusChange, onCoverChange, coverUploading, onDelete }: {
   place: Place
+  onOpen: () => void
   onStatusChange: (s: Place['status']) => void
   onCoverChange: (file: File) => void
   coverUploading: boolean
   onDelete: () => void
 }) {
+  const cover = placeCover(place)
   return (
-    <div className="place-card">
-      {place.image_url && <CoverImage value={place.image_url} className="place-cover" />}
+    <div className="place-card" role="button" tabIndex={0} onClick={onOpen}
+      onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') onOpen() }}>
+      {cover ? <CoverImage value={cover} className="place-cover" /> : <div className="place-cover place-cover-empty">Фото ищем в карточке</div>}
       <div className="place-card-top">
         <div className="place-card-info">
           <h3 className="place-title">{place.title}</h3>
@@ -234,7 +271,7 @@ function PlaceCard({ place, onStatusChange, onCoverChange, coverUploading, onDel
             </span>
           )}
         </div>
-        <button className="delete-btn" onClick={onDelete}>×</button>
+        <button className="delete-btn" onClick={event => { event.stopPropagation(); onDelete() }}>×</button>
       </div>
 
       {place.tags && place.tags.length > 0 && (
@@ -251,14 +288,15 @@ function PlaceCard({ place, onStatusChange, onCoverChange, coverUploading, onDel
         <div className="place-links">
           {place.links.map((l, i) => (
             <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
-              className="place-link">
+              className="place-link" onClick={event => event.stopPropagation()}>
               {l.title || shortenUrl(l.url)}
             </a>
           ))}
         </div>
       )}
 
-      <label className={`place-cover-action ${coverUploading ? 'disabled' : ''}`}>
+      <label className={`place-cover-action ${coverUploading ? 'disabled' : ''}`}
+        onClick={event => event.stopPropagation()}>
         {coverUploading ? 'Загружаем…' : place.image_url ? 'Сменить обложку' : '+ Добавить обложку'}
         <input type="file" accept="image/jpeg,image/png,image/webp" disabled={coverUploading}
           onChange={event => {
@@ -273,13 +311,116 @@ function PlaceCard({ place, onStatusChange, onCoverChange, coverUploading, onDel
           <button key={s.value}
             className={`place-status-btn ${place.status === s.value ? 'active' : ''}`}
             style={place.status === s.value ? { color: s.color, borderColor: s.color } : {}}
-            onClick={() => onStatusChange(s.value as Place['status'])}>
+            onClick={event => { event.stopPropagation(); onStatusChange(s.value as Place['status']) }}>
             {s.label}
           </button>
         ))}
       </div>
     </div>
   )
+}
+
+function PlaceDetail({ place, enriching, onClose, onRefresh }: {
+  place: Place
+  enriching: boolean
+  onClose: () => void
+  onRefresh: () => void
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  const photos = placePhotos(place)
+  const mapUrl = place.latitude != null && place.longitude != null
+    ? `https://yandex.ru/maps/?rtext=55.7263818,37.7705483~${place.latitude},${place.longitude}&rtt=auto`
+    : null
+
+  return (
+    <div className="place-modal-overlay" onClick={onClose}>
+      <article className="place-detail" onClick={event => event.stopPropagation()}>
+        <button className="place-detail-close" onClick={onClose} aria-label="Закрыть">×</button>
+        <PlaceGallery photos={photos} title={place.title} />
+        <div className="place-detail-body">
+          <div className="place-detail-heading">
+            <div>
+              <h2>{place.title}</h2>
+              {(place.city || place.country) && <p>{[place.city, place.country].filter(Boolean).join(', ')}</p>}
+            </div>
+            <button className="place-enrich-button" onClick={onRefresh} disabled={enriching}>
+              {enriching ? 'Ищем фото и маршрут…' : place.enriched_at ? 'Обновить данные' : 'Найти фото и маршрут'}
+            </button>
+          </div>
+
+          {(place.distance_km != null || place.drive_minutes != null) && (
+            <div className="place-route-card">
+              <span className="place-route-icon">↗</span>
+              <div>
+                <strong>{place.drive_minutes != null ? `≈ ${place.drive_minutes} мин` : 'Маршрут построен'}</strong>
+                <span>{place.distance_km != null ? `${place.distance_km} км от дома · без учёта пробок` : 'От дома'}</span>
+              </div>
+              {mapUrl && <a href={mapUrl} target="_blank" rel="noopener noreferrer">Яндекс Карты</a>}
+            </div>
+          )}
+
+          {place.notes && <p className="place-detail-notes">{place.notes}</p>}
+          {place.tags && place.tags.length > 0 && (
+            <div className="place-tags">{place.tags.map(tag => <span key={tag} className="place-tag">{tag}</span>)}</div>
+          )}
+          {place.links && place.links.length > 0 && (
+            <div className="place-detail-links">
+              {place.links.map((link, index) => (
+                <a key={index} href={link.url} target="_blank" rel="noopener noreferrer">
+                  {link.title || shortenUrl(link.url)} ↗
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </article>
+    </div>
+  )
+}
+
+function PlaceGallery({ photos, title }: { photos: string[]; title: string }) {
+  const [urls, setUrls] = useState<string[]>([])
+
+  useEffect(() => {
+    let active = true
+    Promise.all(photos.map(resolveCoverUrl)).then(results => {
+      if (active) setUrls(results.filter((url): url is string => Boolean(url)))
+    })
+    return () => { active = false }
+  }, [photos])
+
+  if (!urls.length) return <div className="place-gallery-empty">{title}<span>Фотографии пока не найдены</span></div>
+  return (
+    <div className={`place-gallery count-${Math.min(urls.length, 3)}`}>
+      {urls.slice(0, 3).map((url, index) => (
+        <div key={url} className={`place-gallery-photo photo-${index + 1}`} style={{ backgroundImage: `url(${url})` }} />
+      ))}
+    </div>
+  )
+}
+
+function placePhotos(place: Place) {
+  const values = [placeCover(place), ...(place.photos ?? [])].filter((value): value is string => Boolean(value))
+  return [...new Set(values)].slice(0, 3)
+}
+
+function placeCover(place: Place) {
+  if (place.image_url && !isTemporarySocialImage(place.image_url)) return place.image_url
+  return place.photos?.[0] ?? null
+}
+
+function isTemporarySocialImage(value: string) {
+  try {
+    const host = new URL(value).hostname.toLowerCase()
+    return host.includes('instagram') || host.includes('cdninstagram') || host.includes('fbcdn')
+  } catch {
+    return false
+  }
 }
 
 function DocsPlaceholder() {
