@@ -57,7 +57,7 @@ export default function HealthPage() {
       person,
       type,
       title: title.trim(),
-      date: date || null,
+      date: date ? new Date(date).toISOString() : null,
       doctor: doctor || null,
       notes: notes || null,
       next_step: nextStep || null,
@@ -115,9 +115,8 @@ export default function HealthPage() {
             onChange={e => setTitle(e.target.value)} />
           <div className="form-row">
             <label className="health-date-field">
-              <span className="health-form-label">Дата</span>
-              <input className="add-input" type="date" value={date}
-                onChange={e => setDate(e.target.value)} />
+              <span className="health-form-label">Дата и время события</span>
+              <DateTimePicker value={date} onChange={setDate} />
             </label>
             <input className="add-input" placeholder="Врач / клиника" value={doctor}
               onChange={e => setDoctor(e.target.value)} />
@@ -134,8 +133,9 @@ export default function HealthPage() {
             </label>
           </div>
           <label className="health-reminder-field">
-            <span className="health-form-label">Напомнить в Telegram</span>
+            <span className="health-form-label">Дата и время напоминания</span>
             <DateTimePicker value={remindAt} onChange={setRemindAt} />
+            <span className="health-form-hint">Уведомление придёт в Telegram</span>
           </label>
           <button className="add-btn health-btn" type="submit" disabled={saving || !title.trim()}>
             Сохранить
@@ -183,7 +183,7 @@ function HealthCard({ event, todayStr, onDelete }: {
           <span className="health-type-tag">{typeLabel}</span>
           <h3 className="health-card-title">{event.title}</h3>
           <div className="health-card-meta">
-            {event.date && <span>{formatDate(event.date)}</span>}
+            {event.date && <span>{formatDateTime(event.date)}</span>}
             {event.doctor && <span>{event.doctor}</span>}
           </div>
         </div>

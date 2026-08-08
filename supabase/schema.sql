@@ -22,7 +22,7 @@ create table health_events (
   person text not null, -- 'alex' | 'jinya'
   type text not null, -- consultation | procedure | aligner | research
   title text not null,
-  date date,
+  date timestamptz,
   doctor text,
   notes text,
   next_step text,

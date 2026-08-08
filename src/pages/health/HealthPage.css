@@ -32,6 +32,11 @@
   text-transform: uppercase;
 }
 
+.health-form-hint {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
 /* Health cards */
 .health-list { display: flex; flex-direction: column; gap: 10px; }
 
