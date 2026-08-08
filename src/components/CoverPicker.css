@@ -1,0 +1,35 @@
+.cover-picker {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.cover-picker-preview {
+  min-height: 82px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface2) center / cover no-repeat;
+}
+
+.cover-picker-controls { display: flex; flex-direction: column; gap: 8px; }
+.cover-picker-actions { display: flex; gap: 8px; align-items: center; }
+.cover-picker-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.cover-picker-button,
+.cover-picker-remove {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  padding: 7px 11px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cover-picker-button:hover { color: var(--text); border-color: #555; }
+.cover-picker-remove { background: transparent; color: var(--danger); }
+
+@media (max-width: 560px) {
+  .cover-picker { grid-template-columns: 88px minmax(0, 1fr); }
+}

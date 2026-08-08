@@ -391,7 +391,6 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: {
         <span className="task-title">{task.title}</span>
         <div className="task-meta">
           <span className="tag">{cat?.label}</span>
-          {person?.label && <span className="tag">{person.label}</span>}
           {task.status && task.status !== 'inbox' && <span className="tag tag-status">{taskStatus?.label}</span>}
           {task.priority && task.priority !== 'normal' && (
             <span className={`tag tag-priority priority-${task.priority}`}>{taskPriority?.label}</span>
@@ -409,8 +408,26 @@ function TaskItem({ task, onToggle, onDelete, onEdit }: {
           )}
         </div>
       </div>
+      {person && <AssigneeAvatar person={task.assigned_to} label={person.label} />}
       <button className="delete-btn" onClick={onDelete} aria-label={`Удалить задачу «${task.title}»`}>×</button>
     </li>
+  )
+}
+
+function AssigneeAvatar({ person, label }: { person: Person; label: string }) {
+  if (!person) {
+    return (
+      <span className="assignee assignee-pair" aria-label="Ответственные: Алексей и Жиня" title="Алексей и Жиня">
+        <span className="assignee-avatar alex">А</span>
+        <span className="assignee-avatar jinya">Ж</span>
+      </span>
+    )
+  }
+
+  return (
+    <span className="assignee" aria-label={`Ответственный: ${label}`} title={label}>
+      <span className={`assignee-avatar ${person}`}>{person === 'alex' ? 'А' : 'Ж'}</span>
+    </span>
   )
 }
 

@@ -310,6 +310,32 @@
 .reminder-tag { color: var(--accent-recipes) !important; border-color: rgba(217,121,167,.28) !important; }
 .reminder-tag.sent { color: var(--success) !important; border-color: rgba(84,201,145,.24) !important; }
 
+.assignee {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-shrink: 0;
+  margin: -2px 2px 0 6px;
+}
+
+.assignee-avatar {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.assignee-avatar.alex { background: linear-gradient(145deg, #4f7bc8, #31548e); }
+.assignee-avatar.jinya { background: linear-gradient(145deg, #b86491, #804367); }
+.assignee-pair .assignee-avatar + .assignee-avatar { margin-left: -9px; }
+
 .task-item .delete-btn { opacity: 0; }
 .task-item:hover .delete-btn { opacity: 1; }
 

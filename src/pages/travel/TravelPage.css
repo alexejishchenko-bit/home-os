@@ -53,6 +53,13 @@
 
 .place-card:hover { border-color: #444; }
 
+.place-cover {
+  height: 150px;
+  margin: -16px -16px 4px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface2) center / cover no-repeat;
+}
+
 .place-card-top {
   display: flex;
   align-items: flex-start;
@@ -115,6 +122,18 @@
 }
 
 .place-link:hover { text-decoration: underline; }
+
+.place-cover-action {
+  align-self: flex-start;
+  color: var(--accent-travel);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.place-cover-action:hover { text-decoration: underline; }
+.place-cover-action.disabled { cursor: wait; opacity: 0.55; }
+.place-cover-action input { display: none; }
 
 .place-status-row {
   display: flex;

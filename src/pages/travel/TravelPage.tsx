@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Place } from '../../lib/types'
+import { uploadCover } from '../../lib/covers'
+import CoverImage from '../../components/CoverImage'
+import CoverPicker from '../../components/CoverPicker'
 import './TravelPage.css'
 
 const STATUSES = [
@@ -27,7 +30,10 @@ export default function TravelPage() {
   const [pTags, setPTags] = useState('')
   const [pLink, setPLink] = useState('')
   const [pNotes, setPNotes] = useState('')
+  const [pImageUrl, setPImageUrl] = useState('')
+  const [pImageFile, setPImageFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
+  const [coverUploadingId, setCoverUploadingId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadPlaces() {
@@ -45,9 +51,17 @@ export default function TravelPage() {
     e.preventDefault()
     if (!pTitle.trim()) return
     setSaving(true)
+    let imageUrl = pImageUrl.trim()
+    try {
+      if (pImageFile) imageUrl = await uploadCover(pImageFile, 'travel')
+    } catch (error) {
+      setSaving(false)
+      alert(error instanceof Error ? error.message : 'Не удалось загрузить обложку')
+      return
+    }
     const tags = pTags ? pTags.split(',').map(t => t.trim()).filter(Boolean) : null
     const links = pLink ? [{ url: pLink, type: 'other' }] : null
-    const { data } = await supabase.from('places').insert({
+    const { data, error } = await supabase.from('places').insert({
       title: pTitle.trim(),
       country: pCountry || null,
       city: pCity || null,
@@ -55,9 +69,16 @@ export default function TravelPage() {
       tags,
       links,
       notes: pNotes || null,
+      image_url: imageUrl || null,
     }).select().single()
+    if (error) {
+      setSaving(false)
+      alert('Не удалось сохранить место: ' + error.message)
+      return
+    }
     if (data) setPlaces(prev => [data, ...prev])
     setPTitle(''); setPCountry(''); setPCity(''); setPTags(''); setPLink(''); setPNotes('')
+    setPImageUrl(''); setPImageFile(null)
     setSaving(false); setShowForm(false)
   }
 
@@ -69,6 +90,20 @@ export default function TravelPage() {
   async function deletePlace(id: string) {
     await supabase.from('places').delete().eq('id', id)
     setPlaces(prev => prev.filter(p => p.id !== id))
+  }
+
+  async function updateCover(place: Place, file: File) {
+    setCoverUploadingId(place.id)
+    try {
+      const imageUrl = await uploadCover(file, 'travel')
+      const { error } = await supabase.from('places').update({ image_url: imageUrl }).eq('id', place.id)
+      if (error) throw error
+      setPlaces(prev => prev.map(p => p.id === place.id ? { ...p, image_url: imageUrl } : p))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Не удалось обновить обложку')
+    } finally {
+      setCoverUploadingId(null)
+    }
   }
 
   const filtered = places.filter(p =>
@@ -116,6 +151,9 @@ export default function TravelPage() {
             value={pLink} onChange={e => setPLink(e.target.value)} />
           <textarea className="add-input textarea" placeholder="Заметки" value={pNotes}
             onChange={e => setPNotes(e.target.value)} rows={2} />
+          <div className="modal-label">Обложка</div>
+          <CoverPicker value={pImageUrl} file={pImageFile}
+            onValueChange={setPImageUrl} onFileChange={setPImageFile} />
           <button className="add-btn travel-btn" type="submit" disabled={saving || !pTitle.trim()}>
             Сохранить
           </button>
@@ -163,6 +201,8 @@ export default function TravelPage() {
               {filtered.map(place => (
                 <PlaceCard key={place.id} place={place}
                   onStatusChange={(s) => updateStatus(place, s)}
+                  onCoverChange={(file) => updateCover(place, file)}
+                  coverUploading={coverUploadingId === place.id}
                   onDelete={() => deletePlace(place.id)} />
               ))}
             </div>
@@ -175,13 +215,16 @@ export default function TravelPage() {
   )
 }
 
-function PlaceCard({ place, onStatusChange, onDelete }: {
+function PlaceCard({ place, onStatusChange, onCoverChange, coverUploading, onDelete }: {
   place: Place
   onStatusChange: (s: Place['status']) => void
+  onCoverChange: (file: File) => void
+  coverUploading: boolean
   onDelete: () => void
 }) {
   return (
     <div className="place-card">
+      {place.image_url && <CoverImage value={place.image_url} className="place-cover" />}
       <div className="place-card-top">
         <div className="place-card-info">
           <h3 className="place-title">{place.title}</h3>
@@ -214,6 +257,16 @@ function PlaceCard({ place, onStatusChange, onDelete }: {
           ))}
         </div>
       )}
+
+      <label className={`place-cover-action ${coverUploading ? 'disabled' : ''}`}>
+        {coverUploading ? 'Загружаем…' : place.image_url ? 'Сменить обложку' : '+ Добавить обложку'}
+        <input type="file" accept="image/jpeg,image/png,image/webp" disabled={coverUploading}
+          onChange={event => {
+            const file = event.target.files?.[0]
+            if (file) onCoverChange(file)
+            event.target.value = ''
+          }} />
+      </label>
 
       <div className="place-status-row">
         {STATUSES.map(s => (

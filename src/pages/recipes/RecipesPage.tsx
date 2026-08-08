@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Recipe } from '../../lib/types'
+import { uploadCover } from '../../lib/covers'
+import CoverImage from '../../components/CoverImage'
+import CoverPicker from '../../components/CoverPicker'
 import './RecipesPage.css'
 
 export default function RecipesPage() {
@@ -13,6 +16,7 @@ export default function RecipesPage() {
   // Form fields
   const [title, setTitle] = useState('')
   const [imageUrl, setImageUrl] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [prepTime, setPrepTime] = useState('')
   const [servings, setServings] = useState('')
   const [tags, setTags] = useState('')
@@ -36,12 +40,14 @@ export default function RecipesPage() {
 
   function resetForm() {
     setTitle(''); setImageUrl(''); setPrepTime(''); setServings('')
+    setImageFile(null)
     setTags(''); setIngredients(''); setInstructions(''); setSourceUrl(''); setNotes('')
   }
 
   function fillForm(recipe: Recipe) {
     setTitle(recipe.title)
     setImageUrl(recipe.image_url ?? '')
+    setImageFile(null)
     setPrepTime(recipe.prep_time_min != null ? String(recipe.prep_time_min) : '')
     setServings(recipe.servings != null ? String(recipe.servings) : '')
     setTags(recipe.tags?.join(', ') ?? '')
@@ -51,10 +57,10 @@ export default function RecipesPage() {
     setNotes(recipe.notes ?? '')
   }
 
-  function buildPayload() {
+  function buildPayload(savedImageUrl: string) {
     return {
       title: title.trim(),
-      image_url: imageUrl.trim() || null,
+      image_url: savedImageUrl || null,
       prep_time_min: prepTime ? Number(prepTime) : null,
       servings: servings ? Number(servings) : null,
       tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : null,
@@ -69,7 +75,15 @@ export default function RecipesPage() {
     e.preventDefault()
     if (!title.trim()) return
     setSaving(true)
-    const { data, error } = await supabase.from('recipes').insert(buildPayload()).select().single()
+    let savedImageUrl = imageUrl.trim()
+    try {
+      if (imageFile) savedImageUrl = await uploadCover(imageFile, 'recipes')
+    } catch (error) {
+      setSaving(false)
+      alert(error instanceof Error ? error.message : 'Не удалось загрузить обложку')
+      return
+    }
+    const { data, error } = await supabase.from('recipes').insert(buildPayload(savedImageUrl)).select().single()
     setSaving(false)
     if (error) { alert('Не удалось сохранить рецепт: ' + error.message); return }
     setRecipes(prev => [data, ...prev])
@@ -80,12 +94,21 @@ export default function RecipesPage() {
   async function saveEdit() {
     if (!openRecipe || !title.trim()) return
     setSaving(true)
-    const patch = buildPayload()
+    let savedImageUrl = imageUrl.trim()
+    try {
+      if (imageFile) savedImageUrl = await uploadCover(imageFile, 'recipes')
+    } catch (error) {
+      setSaving(false)
+      alert(error instanceof Error ? error.message : 'Не удалось загрузить обложку')
+      return
+    }
+    const patch = buildPayload(savedImageUrl)
     const { error } = await supabase.from('recipes').update(patch).eq('id', openRecipe.id)
     setSaving(false)
     if (error) { alert('Не удалось сохранить изменения: ' + error.message); return }
     setRecipes(prev => prev.map(r => r.id === openRecipe.id ? { ...r, ...patch } : r))
     setOpenRecipe(prev => prev ? { ...prev, ...patch } : prev)
+    setImageFile(null)
     setEditing(false)
   }
 
@@ -120,6 +143,7 @@ export default function RecipesPage() {
           <RecipeFormFields
             title={title} setTitle={setTitle}
             imageUrl={imageUrl} setImageUrl={setImageUrl}
+            imageFile={imageFile} setImageFile={setImageFile}
             prepTime={prepTime} setPrepTime={setPrepTime}
             servings={servings} setServings={setServings}
             tags={tags} setTags={setTags}
@@ -161,6 +185,7 @@ export default function RecipesPage() {
                 <RecipeFormFields
                   title={title} setTitle={setTitle}
                   imageUrl={imageUrl} setImageUrl={setImageUrl}
+                  imageFile={imageFile} setImageFile={setImageFile}
                   prepTime={prepTime} setPrepTime={setPrepTime}
                   servings={servings} setServings={setServings}
                   tags={tags} setTags={setTags}
@@ -203,6 +228,7 @@ export default function RecipesPage() {
 function RecipeFormFields(props: {
   title: string; setTitle: (v: string) => void
   imageUrl: string; setImageUrl: (v: string) => void
+  imageFile: File | null; setImageFile: (v: File | null) => void
   prepTime: string; setPrepTime: (v: string) => void
   servings: string; setServings: (v: string) => void
   tags: string; setTags: (v: string) => void
@@ -212,7 +238,7 @@ function RecipeFormFields(props: {
   notes: string; setNotes: (v: string) => void
 }) {
   const {
-    title, setTitle, imageUrl, setImageUrl, prepTime, setPrepTime, servings, setServings,
+    title, setTitle, imageUrl, setImageUrl, imageFile, setImageFile, prepTime, setPrepTime, servings, setServings,
     tags, setTags, ingredients, setIngredients, instructions, setInstructions,
     sourceUrl, setSourceUrl, notes, setNotes,
   } = props
@@ -223,10 +249,9 @@ function RecipeFormFields(props: {
         <input className="add-input" placeholder="Название рецепта" value={title}
           onChange={e => setTitle(e.target.value)} />
       </div>
-      <div className="form-row">
-        <input className="add-input" placeholder="Картинка (URL)" value={imageUrl}
-          onChange={e => setImageUrl(e.target.value)} />
-      </div>
+      <div className="modal-label">Обложка</div>
+      <CoverPicker value={imageUrl} file={imageFile}
+        onValueChange={setImageUrl} onFileChange={setImageFile} />
       <div className="form-row">
         <input className="add-input" type="number" min="0" placeholder="Время, мин" value={prepTime}
           onChange={e => setPrepTime(e.target.value)} />
@@ -255,7 +280,7 @@ function RecipeCard({ recipe, onOpen, onDelete }: {
   return (
     <div className="recipe-card" onClick={onOpen}>
       {recipe.image_url && (
-        <div className="recipe-thumb" style={{ backgroundImage: `url(${recipe.image_url})` }} />
+        <CoverImage value={recipe.image_url} className="recipe-thumb" />
       )}
       <div className="recipe-card-body">
         <div className="recipe-card-top">
@@ -285,7 +310,7 @@ function RecipeDetail({ recipe }: { recipe: Recipe }) {
   return (
     <div className="recipe-detail">
       {recipe.image_url && (
-        <div className="recipe-detail-thumb" style={{ backgroundImage: `url(${recipe.image_url})` }} />
+        <CoverImage value={recipe.image_url} className="recipe-detail-thumb" />
       )}
       {(recipe.prep_time_min || recipe.servings) && (
         <span className="recipe-meta">

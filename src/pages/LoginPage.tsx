@@ -7,10 +7,13 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const user = login(username, password)
+    setLoading(true)
+    const user = await login(username, password)
+    setLoading(false)
     if (user) {
       onLogin(user)
     } else {
@@ -40,7 +43,9 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
             onChange={e => { setPassword(e.target.value); setError(false) }}
           />
           {error && <p className="login-error">Неверный логин или пароль</p>}
-          <button className="login-btn" type="submit">Войти</button>
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? 'Входим…' : 'Войти'}
+          </button>
         </form>
       </div>
     </div>

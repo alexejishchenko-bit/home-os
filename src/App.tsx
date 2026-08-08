@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
-import { getUser, logout } from './lib/auth'
+import { getUser, logout, subscribeToAuth } from './lib/auth'
 import type { User } from './lib/auth'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/home/HomePage'
@@ -44,14 +44,31 @@ const NAV = [
 ]
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(getUser)
+  const [user, setUser] = useState<User | null>(null)
+  const [authReady, setAuthReady] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getUser().then(currentUser => {
+      if (!active) return
+      setUser(currentUser)
+      setAuthReady(true)
+    })
+    const unsubscribe = subscribeToAuth(nextUser => {
+      if (active) setUser(nextUser)
+    })
+    return () => { active = false; unsubscribe() }
+  }, [])
+
+  if (!authReady) {
+    return <div className="login-wrap"><div className="login-box"><p className="login-sub">Проверяем доступ…</p></div></div>
+  }
 
   if (!user) return <LoginPage onLogin={setUser} />
 
-  function handleLogout() {
-    logout()
-    setUser(null)
+  async function handleLogout() {
+    await logout()
   }
 
   return (
