@@ -330,8 +330,8 @@
   font-weight: 700;
   letter-spacing: .02em;
   box-shadow: 0 0 0 1px var(--border);
-  background-size: 230% auto;
-  background-position: 50% 29%;
+  background-size: cover;
+  background-position: center;
 }
 
 .assignee-avatar.alex { background: linear-gradient(145deg, #4f7bc8, #31548e); }

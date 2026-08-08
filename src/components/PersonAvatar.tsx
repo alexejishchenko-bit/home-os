@@ -4,7 +4,7 @@ import { resolveCoverUrl } from '../lib/covers'
 type Person = 'alex' | 'jinya'
 
 const AVATARS: Partial<Record<Person, string>> = {
-  jinya: 'storage://covers/avatars/jinya.png',
+  jinya: 'storage://covers/avatars/jinya-v2.png',
 }
 
 export default function PersonAvatar({ person, className = '' }: { person: Person; className?: string }) {

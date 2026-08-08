@@ -154,8 +154,8 @@
 }
 
 .sidebar-avatar.person-avatar {
-  background-size: 230% auto;
-  background-position: 50% 29%;
+  background-size: cover;
+  background-position: center;
 }
 
 .sidebar-user-info {
