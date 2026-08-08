@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Task, Category, Person } from '../../lib/types'
-import Calendar from '../../components/Calendar'
 import WeekBoard from '../../components/WeekBoard'
 import './HomePage.css'
 
@@ -23,7 +22,7 @@ const USER_TO_PERSON: Record<'lesha' | 'jinya', Person> = {
   jinya: 'kate',
 }
 
-type ViewMode = 'list' | 'calendar' | 'board'
+type ViewMode = 'list' | 'board'
 
 export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jinya' }) {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -31,7 +30,6 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const [view, setView] = useState<ViewMode>('list')
   const [filter, setFilter] = useState<Category | 'all'>('all')
   const [showDone, setShowDone] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   // New task form
@@ -98,7 +96,6 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
   const filtered = tasks.filter(t => {
     if (!showDone && t.done) return false
     if (filter !== 'all' && t.category !== filter) return false
-    if (selectedDate && t.due_date !== selectedDate) return false
     return true
   })
 
@@ -114,7 +111,7 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
         <div className="view-toggle">
           <button
             className={`view-btn ${view === 'list' ? 'active' : ''}`}
-            onClick={() => { setView('list'); setSelectedDate(null) }}
+            onClick={() => setView('list')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="8" y1="6" x2="21" y2="6"/>
@@ -127,20 +124,8 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
             Список
           </button>
           <button
-            className={`view-btn ${view === 'calendar' ? 'active' : ''}`}
-            onClick={() => setView('calendar')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            Календарь
-          </button>
-          <button
             className={`view-btn ${view === 'board' ? 'active' : ''}`}
-            onClick={() => { setView('board'); setSelectedDate(null) }}
+            onClick={() => setView('board')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="4" height="16" rx="1"/>
@@ -190,15 +175,6 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
         </div>
       </form>
 
-      {/* Calendar view */}
-      {view === 'calendar' && (
-        <Calendar
-          tasks={tasks}
-          selectedDate={selectedDate}
-          onDayClick={date => setSelectedDate(date)}
-        />
-      )}
-
       {/* Week board view */}
       {view === 'board' && (
         <WeekBoard
@@ -234,19 +210,11 @@ export default function HomePage({ currentUser }: { currentUser: 'lesha' | 'jiny
         </div>
       )}
 
-      {/* Selected date label in calendar mode */}
-      {view === 'calendar' && selectedDate && (
-        <div className="cal-date-label">
-          <span>Задачи на {formatDate(selectedDate)}</span>
-          <button className="cal-date-clear" onClick={() => setSelectedDate(null)}>Все даты</button>
-        </div>
-      )}
-
       {/* Task list */}
       {loading ? (
         <div className="empty">Загрузка...</div>
       ) : filtered.length === 0 ? (
-        <div className="empty">{selectedDate ? 'Нет задач на этот день' : 'Задач нет'}</div>
+        <div className="empty">Задач нет</div>
       ) : (
         <ul className="task-list">
           {filtered.map(task => (
