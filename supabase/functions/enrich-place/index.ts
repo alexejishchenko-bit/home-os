@@ -58,7 +58,13 @@ Deno.serve(async (request: Request) => {
     const apifyToken = config?.apify_api_token as string | undefined
     if (configError || !apifyToken) return json({ error: 'Apify is not configured' }, 503, headers)
 
-    const details = await findPlace(place as Place, apifyToken)
+    let details
+    try {
+      details = await findPlace(place as Place, apifyToken)
+    } catch (error) {
+      console.warn('[enrich-place] Apify fallback', error instanceof Error ? error.message : String(error))
+      details = await findPublicPlace(place as Place)
+    }
     const photos = await persistPhotos(supabase, place.id, details.photoUrls)
     const route = details.latitude != null && details.longitude != null && isMoscow(place as Place, details)
       ? await drivingRoute(details.latitude, details.longitude)
@@ -139,6 +145,66 @@ async function findPlace(place: Place, token: string) {
     address: text(item.address),
     photoUrls,
   }
+}
+
+async function findPublicPlace(place: Place) {
+  const query = [place.title, place.city, place.country].filter(Boolean).join(', ')
+  const [geocoded, photoUrls] = await Promise.all([
+    geocodePlace(query),
+    findCommonsPhotos(place.title),
+  ])
+  return {
+    latitude: geocoded.latitude,
+    longitude: geocoded.longitude,
+    city: place.city,
+    address: geocoded.address,
+    photoUrls,
+  }
+}
+
+async function geocodePlace(query: string) {
+  const endpoint = new URL('https://nominatim.openstreetmap.org/search')
+  endpoint.searchParams.set('q', query)
+  endpoint.searchParams.set('format', 'jsonv2')
+  endpoint.searchParams.set('limit', '1')
+  const response = await fetch(endpoint, {
+    signal: AbortSignal.timeout(12_000),
+    headers: { 'User-Agent': 'HomeOS/1.0' },
+  })
+  if (!response.ok) return { latitude: null, longitude: null, address: null }
+  const items = await response.json() as { lat?: string; lon?: string; display_name?: string }[]
+  const item = items[0]
+  return {
+    latitude: numberValue(item?.lat),
+    longitude: numberValue(item?.lon),
+    address: text(item?.display_name),
+  }
+}
+
+async function findCommonsPhotos(title: string) {
+  const endpoint = new URL('https://commons.wikimedia.org/w/api.php')
+  endpoint.searchParams.set('action', 'query')
+  endpoint.searchParams.set('generator', 'search')
+  endpoint.searchParams.set('gsrsearch', title)
+  endpoint.searchParams.set('gsrnamespace', '6')
+  endpoint.searchParams.set('gsrlimit', '3')
+  endpoint.searchParams.set('prop', 'imageinfo')
+  endpoint.searchParams.set('iiprop', 'url|mime')
+  endpoint.searchParams.set('iiurlwidth', '1600')
+  endpoint.searchParams.set('format', 'json')
+  endpoint.searchParams.set('origin', '*')
+  const response = await fetch(endpoint, { signal: AbortSignal.timeout(12_000) })
+  if (!response.ok) return []
+  const body = await response.json() as {
+    query?: { pages?: Record<string, { imageinfo?: { thumburl?: string; url?: string; mime?: string }[] }> }
+  }
+  const pages = Object.values(body.query?.pages ?? {})
+  return uniqueStrings(pages.flatMap(page => {
+    const image = page.imageinfo?.[0]
+    return image && ['image/jpeg', 'image/png', 'image/webp'].includes(image.mime ?? '')
+      ? [image.thumburl ?? image.url]
+      : []
+  })).slice(0, 3)
 }
 
 async function persistPhotos(supabase: ReturnType<typeof createClient>, placeId: string, urls: string[]) {
