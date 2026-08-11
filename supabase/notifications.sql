@@ -169,3 +169,15 @@ select cron.schedule(
   '* * * * *',
   $$select private.send_health_reminders();$$
 );
+
+-- Keep pg_cron history useful without letting minute-by-minute reminder jobs
+-- grow the database indefinitely.
+select cron.unschedule(jobid)
+from cron.job
+where jobname = 'home-os-cron-log-retention';
+
+select cron.schedule(
+  'home-os-cron-log-retention',
+  '17 3 * * *',
+  $$delete from cron.job_run_details where end_time < now() - interval '7 days';$$
+);
