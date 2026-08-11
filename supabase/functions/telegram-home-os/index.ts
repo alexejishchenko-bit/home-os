@@ -40,7 +40,7 @@ const MODE_BY_INPUT: Record<string, Mode> = {
 }
 
 const PROMPT_BY_MODE: Record<Mode, string> = {
-  task: 'Напиши задачу одним сообщением.',
+  task: 'Напиши задачу одним сообщением: что сделать, кому назначить, срок и когда напомнить.',
   travel: 'Пришли ссылку на отель, место, пост, Reels или TikTok.',
   recipe: 'Пришли ссылку на рецепт, пост, Reels или TikTok.',
   health: 'Напиши событие или следующий шаг одним сообщением. Я добавлю его в твой раздел «Здоровье».',
@@ -117,16 +117,21 @@ Deno.serve(async (request: Request) => {
 
     const mode = session.mode as Mode
     if (mode === 'task') {
+      const task = parseTaskText(text, person)
       const { error } = await supabase.from('tasks').insert({
-        title: text,
-        category: 'task',
-        assigned_to: person,
+        title: task.title,
+        category: task.category,
+        assigned_to: task.assignedTo,
+        due_date: task.dueDate,
+        notes: task.notes,
         status: 'inbox',
-        priority: 'normal',
+        priority: task.priority,
+        link_url: task.linkUrl,
+        remind_at: task.remindAt,
       })
       if (error) throw error
       await clearSession(supabase, chatId)
-      await sendTelegram(telegramConfig.telegram_bot_token, chatId, `Задача создана: ${text}`, { reply_markup: MENU })
+      await sendTelegram(telegramConfig.telegram_bot_token, chatId, taskConfirmation(task), { reply_markup: MENU })
       return json({ ok: true })
     }
 
@@ -220,6 +225,73 @@ Deno.serve(async (request: Request) => {
 
 async function clearSession(supabase: ReturnType<typeof createClient>, chatId: string) {
   await supabase.from('telegram_sessions').delete().eq('chat_id', Number(chatId))
+}
+
+type TaskInput = {
+  title: string
+  category: 'task' | 'cleaning' | 'shopping' | 'bill'
+  assignedTo: 'alex' | 'jinya'
+  dueDate: string | null
+  remindAt: string | null
+  priority: 'normal' | 'high' | 'urgent'
+  notes: string | null
+  linkUrl: string | null
+}
+
+function parseTaskText(text: string, sender: 'alex' | 'jinya'): TaskInput {
+  const parts = text.split(/[,;\n]+/).map(part => part.trim()).filter(Boolean)
+  const metadata = parts.filter(isTaskMetadata)
+  const titleParts = parts.filter(part => !isTaskMetadata(part))
+  const title = titleParts.join(', ') || parts[0] || text
+  const joinedMetadata = metadata.join(' ')
+  const assigneeText = joinedMetadata || text
+  const assignedTo = /(?:на|для|назнач(?:ить|ь)|ответственн\w*)\s+(?:жин(?:ю|е|и|я))/iu.test(assigneeText)
+    ? 'jinya'
+    : /(?:на|для|назнач(?:ить|ь)|ответственн\w*)\s+(?:л[её]ш(?:у|е|и)|алекс(?:ея|ею|ей))/iu.test(assigneeText)
+      ? 'alex'
+      : sender
+  return {
+    title,
+    category: /купить|заказать|покупк/iu.test(text) ? 'shopping'
+      : /уборк|помыть|убрать/iu.test(text) ? 'cleaning'
+      : /сч[её]т|оплатить/iu.test(text) ? 'bill' : 'task',
+    assignedTo,
+    dueDate: null,
+    remindAt: parseReminder(text),
+    priority: /срочно|urgent/iu.test(text) ? 'urgent' : /важн|высок(?:ий|ого) приоритет/iu.test(text) ? 'high' : 'normal',
+    notes: null,
+    linkUrl: extractUrl(text),
+  }
+}
+
+function isTaskMetadata(part: string) {
+  return /^(?:задача|исполнитель|ответственн\w*|назнач(?:ить|ь)|для)\b/iu.test(part)
+    || /^(?:уведом(?:ление|ить)|напомни(?:ть|ание)?)\b/iu.test(part)
+    || /^(?:срок|дедлайн|приоритет|категория)\b/iu.test(part)
+}
+
+function parseReminder(text: string) {
+  const reminder = text.match(/(?:уведом(?:ление|ить)|напомни(?:ть|ание)?)[\s\S]*?\bв\s*(\d{1,2})(?:[:.](\d{2}))?/iu)
+  if (!reminder || !/\b(?:сегодня|завтра)\b/iu.test(text)) return null
+  const hour = Number(reminder[1])
+  const minute = Number(reminder[2] ?? 0)
+  if (hour > 23 || minute > 59) return null
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit',
+  })
+  const dateParts = Object.fromEntries(formatter.formatToParts(new Date()).map(part => [part.type, part.value]))
+  const base = new Date(`${dateParts.year}-${dateParts.month}-${dateParts.day}T00:00:00+03:00`)
+  if (/\bзавтра\b/iu.test(text)) base.setUTCDate(base.getUTCDate() + 1)
+  return `${base.toISOString().slice(0, 10)}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+03:00`
+}
+
+function taskConfirmation(task: TaskInput) {
+  const person = task.assignedTo === 'jinya' ? 'Жиня' : 'Алексей'
+  const reminder = task.remindAt
+    ? new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(task.remindAt))
+    : null
+  return [`Задача создана: ${task.title}`, `Ответственный: ${person}`, reminder ? `Напоминание: ${reminder}` : null]
+    .filter(Boolean).join('\n')
 }
 
 async function sendTelegram(token: string, chatId: string, text: string, extra: Record<string, unknown> = {}) {
