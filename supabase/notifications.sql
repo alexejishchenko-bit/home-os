@@ -122,7 +122,7 @@ begin
   end if;
 
   for event_row in
-    select id, person
+    select id, person, title, notes
     from public.health_events
     where remind_at is not null
       and remind_at <= now()
@@ -137,8 +137,10 @@ begin
     end;
 
     if chat_id is not null then
-      -- Keep medical details inside HomeOS; Telegram receives no sensitive payload.
-      message_text := '🩺 Напоминание о здоровье' || E'\n' || 'Открой HomeOS, чтобы посмотреть детали.';
+      message_text := '🩺 HomeOS · Здоровье' || E'\n' || event_row.title;
+      if nullif(btrim(event_row.notes), '') is not null then
+        message_text := message_text || E'\n' || event_row.notes;
+      end if;
 
       perform net.http_post(
         url := 'https://api.telegram.org/bot' || bot_token || '/sendMessage',
